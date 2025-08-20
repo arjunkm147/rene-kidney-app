@@ -8,10 +8,18 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#a75954">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="RENÉ">
+    <link rel="manifest" href="manifest.json">
+    
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: #fef7ed;
+            background: linear-gradient(135deg, #fef7ed 0%, #fed7aa 100%);
             margin: 0;
             padding: 0;
         }
@@ -20,309 +28,1027 @@
             margin: 0 auto;
             min-height: 100vh;
             background: white;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            box-shadow: 0 0 30px rgba(0,0,0,0.15);
+        }
+        .rene-gradient {
+            background: linear-gradient(135deg, #a75954 0%, #d4776b 50%, #f4a261 100%);
+        }
+        .loading-animation {
+            animation: pulse 2s ease-in-out infinite alternate;
+        }
+        @keyframes pulse {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
+        }
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .bounce-in {
+            animation: bounceIn 0.5s ease-out;
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            max-width: 300px;
         }
     </style>
 </head>
 <body>
     <div id="root">
-        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 24px; color: #f97316;">
-            🦸‍♀️ Loading RENÉ...
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; color: #a75954;" class="loading-animation">
+            <div style="text-align: center;">
+                <div style="font-size: 60px; margin-bottom: 20px;">🫘</div>
+                <div style="font-size: 24px; font-weight: bold;">RENÉ</div>
+                <div style="font-size: 14px; opacity: 0.7;">Kidney Coach</div>
+            </div>
         </div>
     </div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
 
         const App = () => {
             const [currentPage, setCurrentPage] = useState('home');
-            const [streakCount, setStreakCount] = useState(7);
-            const [medicationTaken, setMedicationTaken] = useState(true);
+            const [loading, setLoading] = useState(true);
+            const [notification, setNotification] = useState(null);
+            
+            // Enhanced state
+            const [heroData, setHeroData] = useState({
+                name: "HealthHero23",
+                level: 8,
+                xp: 1840,
+                xpToNext: 2000,
+                totalPoints: 15420,
+                joinDate: "March 2024"
+            });
+            
+            const [streakData, setStreakData] = useState({
+                currentStreak: 12,
+                bestStreak: 28,
+                medicationTaken: true,
+                medicationTime: "08:30 AM",
+                fluidIntake: 1400,
+                fluidTarget: 2000,
+                stepCount: 6200,
+                stepTarget: 8000,
+                sleepHours: 7.5,
+                moodRating: 4
+            });
 
-            // Simple Home Page
+            const [todayGoals, setTodayGoals] = useState([
+                { id: 1, title: "Morning Medication", completed: true, xp: 50, icon: "💊" },
+                { id: 2, title: "Fluid Goal (2L)", completed: false, xp: 30, icon: "💧" },
+                { id: 3, title: "Walk 8000 steps", completed: false, xp: 40, icon: "👟" },
+                { id: 4, title: "Evening Medication", completed: false, xp: 50, icon: "💊" },
+                { id: 5, title: "Mood Check-in", completed: false, xp: 20, icon: "😊" }
+            ]);
+
+            const [chatMessages, setChatMessages] = useState([
+                { id: 1, user: "KidneyWarrior", message: "Just completed my 30-day streak! 🎉", time: "5m", avatar: "🦸‍♀️", likes: 12 },
+                { id: 2, user: "HealthChamp", message: "Anyone tried the new meditation module?", time: "12m", avatar: "🦸‍♂️", likes: 3 },
+                { id: 3, user: "StrongKidney", message: "Remember: small steps every day! 💪", time: "25m", avatar: "🦸", likes: 8 },
+                { id: 4, user: "WellnessHero", message: "Hydration tip: Add lemon to make it tasty! 🍋", time: "1h", avatar: "🦸‍♀️", likes: 15 }
+            ]);
+
+            const [newMessage, setNewMessage] = useState('');
+            const [achievements, setAchievements] = useState([
+                { id: 1, title: "Week Warrior", description: "7-day streak completed", unlocked: true, icon: "🔥" },
+                { id: 2, title: "Hydration Hero", description: "Met fluid goals 10 days", unlocked: true, icon: "💧" },
+                { id: 3, title: "Step Master", description: "10,000 steps in a day", unlocked: false, icon: "👟" },
+                { id: 4, title: "Consistency King", description: "30-day streak", unlocked: false, icon: "👑" }
+            ]);
+
+            // Loading effect
+            useEffect(() => {
+                const timer = setTimeout(() => setLoading(false), 2000);
+                return () => clearTimeout(timer);
+            }, []);
+
+            const showNotification = (message, type = 'success') => {
+                setNotification({ message, type });
+                setTimeout(() => setNotification(null), 3000);
+            };
+
+            const completeGoal = (goalId) => {
+                setTodayGoals(prev => prev.map(goal => 
+                    goal.id === goalId ? { ...goal, completed: true } : goal
+                ));
+                const goal = todayGoals.find(g => g.id === goalId);
+                if (goal && !goal.completed) {
+                    setHeroData(prev => ({ ...prev, xp: prev.xp + goal.xp }));
+                    showNotification(`🎉 +${goal.xp} XP! Great job completing ${goal.title}!`);
+                }
+            };
+
+            const sendMessage = () => {
+                if (newMessage.trim()) {
+                    const message = {
+                        id: chatMessages.length + 1,
+                        user: heroData.name,
+                        message: newMessage,
+                        time: "now",
+                        avatar: "🦸‍♀️",
+                        likes: 0
+                    };
+                    setChatMessages(prev => [message, ...prev]);
+                    setNewMessage('');
+                    showNotification("Message sent to Hero Alliance! 💬");
+                }
+            };
+
+            const likeMessage = (messageId) => {
+                setChatMessages(prev => prev.map(msg => 
+                    msg.id === messageId ? { ...msg, likes: msg.likes + 1 } : msg
+                ));
+            };
+
+            if (loading) {
+                return (
+                    <div className="app-container flex items-center justify-center">
+                        <div className="text-center">
+                            <div className="text-6xl mb-4 loading-animation">🫘</div>
+                            <div className="text-2xl font-bold text-red-800 mb-2">RENÉ</div>
+                            <div className="text-sm text-red-600">Kidney Coach</div>
+                            <div className="mt-4 text-xs text-gray-500">Loading your health journey...</div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // RENÉ Logo Component
+            const ReneLogo = ({ size = "small" }) => (
+                <div className={`inline-flex items-center space-x-2 ${size === 'large' ? 'text-2xl' : 'text-lg'}`}>
+                    <div className="w-8 h-8 relative">
+                        <div className="w-8 h-8 bg-red-800 rounded-full flex items-center justify-center">
+                            <span className="text-orange-400 text-lg">+</span>
+                        </div>
+                    </div>
+                    <span className={`font-bold text-red-800 ${size === 'large' ? 'text-2xl' : 'text-lg'}`}>
+                        RENÉ
+                    </span>
+                </div>
+            );
+
+            // Notification Component
+            const Notification = () => notification && (
+                <div className={`notification slide-up ${
+                    notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+                } text-white p-3 rounded-lg shadow-lg`}>
+                    {notification.message}
+                </div>
+            );
+
+            // Enhanced Home Page
             if (currentPage === 'home') {
                 return (
                     <div className="app-container">
-                        <div className="p-6 space-y-6">
-                            {/* Header */}
-                            <div className="bg-gradient-to-r from-orange-400 to-orange-500 p-6 rounded-xl text-white">
-                                <h1 className="text-2xl font-bold mb-2">Become a Kidney Health Hero</h1>
-                                <p className="text-orange-100">Join thousands of heroes on their journey to better kidney health</p>
+                        <Notification />
+                        
+                        {/* Header with Logo */}
+                        <div className="rene-gradient p-6 text-white">
+                            <div className="flex justify-between items-center mb-4">
+                                <ReneLogo size="large" />
+                                <div className="text-right">
+                                    <div className="text-sm opacity-90">Welcome back!</div>
+                                    <div className="font-bold">{heroData.name}</div>
+                                </div>
                             </div>
+                            
+                            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <div className="text-2xl font-bold">Level {heroData.level}</div>
+                                        <div className="text-sm opacity-90">Kidney Health Hero</div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-xl font-bold">{heroData.xp}</div>
+                                        <div className="text-xs opacity-90">XP Points</div>
+                                    </div>
+                                </div>
+                                <div className="mt-3 bg-white/20 rounded-full h-2">
+                                    <div 
+                                        className="bg-orange-400 rounded-full h-2 transition-all duration-500"
+                                        style={{ width: `${(heroData.xp / heroData.xpToNext) * 100}%` }}
+                                    />
+                                </div>
+                                <div className="text-xs mt-1 opacity-90">
+                                    {heroData.xpToNext - heroData.xp} XP to Level {heroData.level + 1}
+                                </div>
+                            </div>
+                        </div>
 
-                            {/* Streak Card */}
-                            <div className="bg-gradient-to-r from-orange-400 to-orange-500 p-6 rounded-xl text-white">
+                        <div className="p-6 space-y-6">
+                            {/* Enhanced Streak Card */}
+                            <div className="bg-gradient-to-r from-orange-400 to-orange-500 p-6 rounded-xl text-white shadow-lg slide-up">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-xl font-bold">🔥 {streakCount} Day Streak!</h3>
-                                    <span className="bg-white/20 px-3 py-1 rounded-full text-sm">Active</span>
+                                    <div>
+                                        <h3 className="text-2xl font-bold">🔥 {streakData.currentStreak} Day Streak!</h3>
+                                        <p className="text-orange-100 text-sm">Best: {streakData.bestStreak} days</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">Active</div>
+                                        <div className="text-xs mt-1 opacity-80">Since March 8</div>
+                                    </div>
                                 </div>
                                 
-                                {/* Streak dots */}
-                                <div className="flex space-x-2 mb-6">
-                                    {[...Array(7)].map((_, i) => (
+                                {/* Streak visualization */}
+                                <div className="flex space-x-1 mb-6">
+                                    {[...Array(14)].map((_, i) => (
                                         <div
                                             key={i}
-                                            className={`w-4 h-4 rounded-full ${
-                                                i < streakCount ? 'bg-white' : 'bg-white/30'
+                                            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                                                i < streakData.currentStreak ? 'bg-white scale-110' : 'bg-white/30'
                                             }`}
                                         />
                                     ))}
                                 </div>
 
-                                {/* Goals */}
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span>💊 Medication Adherence</span>
-                                        <button
-                                            onClick={() => setMedicationTaken(!medicationTaken)}
-                                            className={`px-3 py-1 rounded-full text-xs ${
-                                                medicationTaken ? 'bg-green-500 text-white' : 'bg-white/20 text-white'
-                                            }`}
-                                        >
-                                            {medicationTaken ? '100% ✓' : 'Mark Complete'}
-                                        </button>
+                                {/* Today's Quick Stats */}
+                                <div className="grid grid-cols-3 gap-4 text-center">
+                                    <div>
+                                        <div className="text-2xl">💊</div>
+                                        <div className="text-xs opacity-90">Medicine</div>
+                                        <div className="font-bold">{streakData.medicationTaken ? '✓' : '○'}</div>
                                     </div>
-                                    
-                                    <div className="flex justify-between items-center">
-                                        <span>💧 Fluid Target</span>
-                                        <span className="text-cyan-200">85%</span>
+                                    <div>
+                                        <div className="text-2xl">💧</div>
+                                        <div className="text-xs opacity-90">Hydration</div>
+                                        <div className="font-bold">{Math.round((streakData.fluidIntake/streakData.fluidTarget)*100)}%</div>
                                     </div>
-                                    
-                                    <div className="flex justify-between items-center">
-                                        <span>👟 Step Count</span>
-                                        <span className="text-orange-200">92%</span>
-                                    </div>
-                                </div>
-
-                                <div className="mt-4 text-center">
-                                    <span className="text-sm bg-white/10 px-3 py-1 rounded-full">
-                                        🏆 Keep going to unlock rewards!
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Hero Modules */}
-                            <div className="space-y-4">
-                                <div 
-                                    onClick={() => setCurrentPage('goals')}
-                                    className="bg-gray-50 p-4 rounded-xl flex items-center space-x-4 cursor-pointer hover:bg-gray-100"
-                                >
-                                    <div className="bg-orange-100 p-3 rounded-lg">
-                                        ⚙️
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold text-gray-800">Mission Command Center</h3>
-                                        <p className="text-gray-600 text-sm">Get personalized guidance from RENÉ</p>
-                                    </div>
-                                </div>
-
-                                <div 
-                                    onClick={() => setCurrentPage('chat')}
-                                    className="bg-gray-50 p-4 rounded-xl flex items-center space-x-4 cursor-pointer hover:bg-gray-100"
-                                >
-                                    <div className="bg-purple-500 p-3 rounded-lg">
-                                        👥
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold text-gray-800">Hero Alliance Network</h3>
-                                        <p className="text-gray-600 text-sm">Connect with fellow heroes</p>
-                                        <span className="bg-purple-500 text-white px-2 py-1 rounded text-xs">Active</span>
+                                    <div>
+                                        <div className="text-2xl">👟</div>
+                                        <div className="text-xs opacity-90">Steps</div>
+                                        <div className="font-bold">{(streakData.stepCount/1000).toFixed(1)}k</div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* RENÉ Chat Button */}
-                            <button 
-                                onClick={() => alert('🤖 RENÉ AI Coach would open here!')}
-                                className="w-full bg-orange-500 text-white p-4 rounded-xl font-semibold hover:bg-orange-600"
-                            >
-                                💬 Chat with RENÉ
-                            </button>
-
-                            {/* Bottom Navigation */}
-                            <div className="flex justify-around py-4 border-t border-gray-200">
-                                <button
-                                    onClick={() => setCurrentPage('home')}
-                                    className={`flex flex-col items-center ${currentPage === 'home' ? 'text-orange-500' : 'text-gray-500'}`}
-                                >
-                                    🏠
-                                    <span className="text-xs mt-1">Home</span>
-                                </button>
-                                <button
-                                    onClick={() => setCurrentPage('goals')}
-                                    className={`flex flex-col items-center ${currentPage === 'goals' ? 'text-orange-500' : 'text-gray-500'}`}
-                                >
-                                    🎯
-                                    <span className="text-xs mt-1">Goals</span>
-                                </button>
-                                <button
-                                    onClick={() => setCurrentPage('chat')}
-                                    className={`flex flex-col items-center ${currentPage === 'chat' ? 'text-orange-500' : 'text-gray-500'}`}
-                                >
-                                    👥
-                                    <span className="text-xs mt-1">Heroes</span>
-                                </button>
-                                <button className="flex flex-col items-center text-gray-500">
-                                    👤
-                                    <span className="text-xs mt-1">Profile</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            // Goals Page
-            if (currentPage === 'goals') {
-                return (
-                    <div className="app-container">
-                        <div className="p-6">
-                            <div className="flex items-center space-x-3 mb-6">
-                                <button 
-                                    onClick={() => setCurrentPage('home')}
-                                    className="text-2xl"
-                                >
-                                    ←
-                                </button>
-                                <h1 className="text-xl font-bold">Mission Command Center</h1>
-                            </div>
-
-                            <div className="bg-gradient-to-r from-orange-400 to-orange-500 p-6 rounded-xl text-white mb-6">
-                                <h2 className="text-2xl font-bold">Alex_Warrior</h2>
-                                <p className="text-orange-100">Level 12 Hero</p>
-                                <div className="mt-4 bg-white/20 rounded-full h-3">
-                                    <div className="bg-white rounded-full h-3 w-3/4"></div>
-                                </div>
-                                <p className="text-sm mt-2">2840 / 3000 XP</p>
-                            </div>
-
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold">Today's Mission</h3>
-                                
-                                <div className="bg-white p-4 rounded-xl border border-gray-200">
-                                    <h4 className="font-semibold mb-2">💊 Medication Quest</h4>
-                                    <p className="text-gray-600 text-sm mb-3">Take your prescribed medications on time</p>
-                                    <button
-                                        onClick={() => setMedicationTaken(!medicationTaken)}
-                                        className={`px-4 py-2 rounded-lg font-medium ${
-                                            medicationTaken ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'
-                                        }`}
+                            {/* Today's Goals */}
+                            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                                <h3 className="font-bold text-gray-800 mb-3 flex items-center">
+                                    <span className="mr-2">🎯</span>
+                                    Today's Missions ({todayGoals.filter(g => g.completed).length}/{todayGoals.length})
+                                </h3>
+                                <div className="space-y-2">
+                                    {todayGoals.slice(0, 3).map(goal => (
+                                        <div key={goal.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                            <div className="flex items-center space-x-3">
+                                                <span className="text-lg">{goal.icon}</span>
+                                                <span className={`text-sm ${goal.completed ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+                                                    {goal.title}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => completeGoal(goal.id)}
+                                                className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                                                    goal.completed 
+                                                        ? 'bg-green-500 text-white' 
+                                                        : 'bg-orange-500 text-white hover:bg-orange-600'
+                                                }`}
+                                                disabled={goal.completed}
+                                            >
+                                                {goal.completed ? '✓ Done' : `+${goal.xp} XP`}
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button 
+                                        onClick={() => setCurrentPage('goals')}
+                                        className="w-full text-center text-orange-600 text-sm font-medium py-2 hover:bg-orange-50 rounded-lg transition-colors"
                                     >
-                                        {medicationTaken ? 'Completed ✓' : 'Mark Complete'}
+                                        View All Goals →
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Bottom Navigation */}
-                            <div className="flex justify-around py-4 border-t border-gray-200 mt-8">
-                                <button
-                                    onClick={() => setCurrentPage('home')}
-                                    className="flex flex-col items-center text-gray-500"
+                            {/* Hero Modules */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div 
+                                    onClick={() => setCurrentPage('goals')}
+                                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all"
                                 >
-                                    🏠
-                                    <span className="text-xs mt-1">Home</span>
-                                </button>
-                                <button className="flex flex-col items-center text-orange-500">
-                                    🎯
-                                    <span className="text-xs mt-1">Goals</span>
-                                </button>
-                                <button
+                                    <div className="text-2xl mb-2">⚙️</div>
+                                    <h4 className="font-semibold text-sm text-gray-800">Mission Center</h4>
+                                    <p className="text-xs text-gray-600">Track goals</p>
+                                </div>
+
+                                <div 
                                     onClick={() => setCurrentPage('chat')}
-                                    className="flex flex-col items-center text-gray-500"
+                                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all"
                                 >
-                                    👥
-                                    <span className="text-xs mt-1">Heroes</span>
-                                </button>
-                                <button className="flex flex-col items-center text-gray-500">
-                                    👤
-                                    <span className="text-xs mt-1">Profile</span>
-                                </button>
+                                    <div className="text-2xl mb-2">👥</div>
+                                    <h4 className="font-semibold text-sm text-gray-800">Hero Alliance</h4>
+                                    <p className="text-xs text-gray-600">Chat & support</p>
+                                    <span className="bg-green-500 text-white px-2 py-0.5 rounded text-xs mt-1 inline-block">
+                                        4 online
+                                    </span>
+                                </div>
+
+                                <div 
+                                    onClick={() => setCurrentPage('achievements')}
+                                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all"
+                                >
+                                    <div className="text-2xl mb-2">🏆</div>
+                                    <h4 className="font-semibold text-sm text-gray-800">Achievements</h4>
+                                    <p className="text-xs text-gray-600">Unlock rewards</p>
+                                </div>
+
+                                <div 
+                                    onClick={() => alert('🤖 RENÉ AI Coach: "Hello! How can I help with your kidney health today?"')}
+                                    className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all"
+                                >
+                                    <div className="text-2xl mb-2">🤖</div>
+                                    <h4 className="font-semibold text-sm text-gray-800">AI Coach</h4>
+                                    <p className="text-xs text-gray-600">Get guidance</p>
+                                </div>
                             </div>
+
+                            {/* Quick Actions */}
+                            <div className="bg-orange-50 p-4 rounded-xl">
+                                <h4 className="font-semibold text-gray-800 mb-3">Quick Actions</h4>
+                                <div className="flex space-x-2">
+                                    <button 
+                                        onClick={() => {
+                                            setStreakData(prev => ({...prev, fluidIntake: Math.min(prev.fluidIntake + 250, prev.fluidTarget)}));
+                                            showNotification("💧 +250ml logged!");
+                                        }}
+                                        className="flex-1 bg-blue-500 text-white py-2 px-3 rounded-lg text-sm font-medium"
+                                    >
+                                        💧 +Water
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            setStreakData(prev => ({...prev, stepCount: prev.stepCount + 1000}));
+                                            showNotification("👟 +1000 steps added!");
+                                        }}
+                                        className="flex-1 bg-green-500 text-white py-2 px-3 rounded-lg text-sm font-medium"
+                                    >
+                                        👟 +Steps
+                                    </button>
+                                    <button 
+                                        onClick={() => setCurrentPage('mood')}
+                                        className="flex-1 bg-purple-500 text-white py-2 px-3 rounded-lg text-sm font-medium"
+                                    >
+                                        😊 Mood
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bottom Navigation */}
+                        <div className="flex justify-around py-3 border-t border-gray-200 bg-white">
+                            <button className="flex flex-col items-center text-orange-500">
+                                <div className="text-xl">🏠</div>
+                                <span className="text-xs mt-1">Home</span>
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage('goals')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">🎯</div>
+                                <span className="text-xs mt-1">Goals</span>
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage('chat')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">👥</div>
+                                <span className="text-xs mt-1">Heroes</span>
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage('profile')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">👤</div>
+                                <span className="text-xs mt-1">Profile</span>
+                            </button>
                         </div>
                     </div>
                 );
             }
 
-            // Chat Page
-            if (currentPage === 'chat') {
+            // Enhanced Goals Page
+            if (currentPage === 'goals') {
                 return (
                     <div className="app-container">
-                        <div className="p-6">
-                            <div className="flex items-center space-x-3 mb-6">
+                        <Notification />
+                        
+                        {/* Header */}
+                        <div className="rene-gradient p-6 text-white">
+                            <div className="flex items-center space-x-3 mb-4">
                                 <button 
                                     onClick={() => setCurrentPage('home')}
                                     className="text-2xl"
                                 >
                                     ←
                                 </button>
-                                <h1 className="text-xl font-bold">Hero Alliance Network</h1>
+                                <ReneLogo />
+                                <span className="font-bold text-lg">Mission Center</span>
                             </div>
+                        </div>
 
-                            <div className="bg-purple-100 p-4 rounded-lg mb-4">
-                                <h3 className="font-semibold mb-2">Heroes Online (4)</h3>
-                                <div className="flex space-x-2">
-                                    <span className="bg-purple-500 text-white px-2 py-1 rounded-full text-sm">Jordan_Hero</span>
-                                    <span className="bg-purple-500 text-white px-2 py-1 rounded-full text-sm">Sam_Champion</span>
-                                </div>
-                            </div>
-
-                            <div className="space-y-3 mb-6">
-                                <div className="flex space-x-3">
-                                    <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white">
-                                        🦸‍♀️
+                        <div className="p-6 space-y-6">
+                            {/* Progress Overview */}
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                <h3 className="font-bold text-gray-800 mb-4">📊 Today's Progress</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="text-center">
+                                        <div className="text-2xl font-bold text-green-500">
+                                            {todayGoals.filter(g => g.completed).length}/{todayGoals.length}
+                                        </div>
+                                        <div className="text-xs text-gray-600">Goals Complete</div>
                                     </div>
-                                    <div className="bg-white p-3 rounded-lg flex-1">
-                                        <div className="font-semibold text-sm">Jordan_Hero</div>
-                                        <div>Just hit my 14-day streak! 💪</div>
-                                    </div>
-                                </div>
-
-                                <div className="flex space-x-3">
-                                    <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white">
-                                        🦸‍♂️
-                                    </div>
-                                    <div className="bg-white p-3 rounded-lg flex-1">
-                                        <div className="font-semibold text-sm">Sam_Champion</div>
-                                        <div>Way to go! I'm at 9 days myself 🔥</div>
+                                    <div className="text-center">
+                                        <div className="text-2xl font-bold text-orange-500">
+                                            {todayGoals.filter(g => g.completed).reduce((sum, g) => sum + g.xp, 0)}
+                                        </div>
+                                        <div className="text-xs text-gray-600">XP Earned</div>
                                     </div>
                                 </div>
                             </div>
 
+                            {/* All Goals */}
+                            <div className="space-y-3">
+                                <h3 className="font-bold text-gray-800">🎯 All Missions</h3>
+                                {todayGoals.map(goal => (
+                                    <div key={goal.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-3">
+                                                <span className="text-2xl">{goal.icon}</span>
+                                                <div>
+                                                    <h4 className={`font-semibold ${goal.completed ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+                                                        {goal.title}
+                                                    </h4>
+                                                    <p className="text-xs text-gray-600">
+                                                        {goal.completed ? 'Completed!' : `Earn ${goal.xp} XP`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => completeGoal(goal.id)}
+                                                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                                                    goal.completed 
+                                                        ? 'bg-green-500 text-white' 
+                                                        : 'bg-orange-500 text-white hover:bg-orange-600'
+                                                }`}
+                                                disabled={goal.completed}
+                                            >
+                                                {goal.completed ? '✓ Done' : 'Complete'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Weekly Stats */}
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                <h3 className="font-bold text-gray-800 mb-4">📈 This Week</h3>
+                                <div className="grid grid-cols-3 gap-4 text-center">
+                                    <div>
+                                        <div className="text-xl font-bold text-blue-500">94%</div>
+                                        <div className="text-xs text-gray-600">Medication</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-xl font-bold text-cyan-500">1.8L</div>
+                                        <div className="text-xs text-gray-600">Avg Fluid</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-xl font-bold text-green-500">7.2k</div>
+                                        <div className="text-xs text-gray-600">Avg Steps</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bottom Navigation */}
+                        <div className="flex justify-around py-3 border-t border-gray-200 bg-white">
+                            <button
+                                onClick={() => setCurrentPage('home')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">🏠</div>
+                                <span className="text-xs mt-1">Home</span>
+                            </button>
+                            <button className="flex flex-col items-center text-orange-500">
+                                <div className="text-xl">🎯</div>
+                                <span className="text-xs mt-1">Goals</span>
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage('chat')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">👥</div>
+                                <span className="text-xs mt-1">Heroes</span>
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage('profile')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">👤</div>
+                                <span className="text-xs mt-1">Profile</span>
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Enhanced Chat Page
+            if (currentPage === 'chat') {
+                return (
+                    <div className="app-container">
+                        <Notification />
+                        
+                        {/* Header */}
+                        <div className="rene-gradient p-6 text-white">
+                            <div className="flex items-center space-x-3 mb-4">
+                                <button 
+                                    onClick={() => setCurrentPage('home')}
+                                    className="text-2xl"
+                                >
+                                    ←
+                                </button>
+                                <ReneLogo />
+                                <span className="font-bold text-lg">Hero Alliance</span>
+                            </div>
+                            
+                            {/* Online status */}
+                            <div className="bg-white/10 p-3 rounded-lg backdrop-blur-sm">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm">🌟 Heroes Online</span>
+                                    <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs">4 active</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Messages */}
+                        <div className="p-4 space-y-3 flex-1 overflow-y-auto bg-gray-50">
+                            {chatMessages.map(message => (
+                                <div key={message.id} className="flex space-x-3 slide-up">
+                                    <div className="w-10 h-10 bg-gradient-to-r from-red-800 to-red-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+                                        {message.avatar}
+                                    </div>
+                                    <div className="flex-1 bg-white rounded-lg p-3 shadow-sm">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="font-semibold text-gray-800 text-sm">{message.user}</span>
+                                            <span className="text-xs text-gray-500">{message.time}</span>
+                                        </div>
+                                        <p className="text-gray-700 text-sm">{message.message}</p>
+                                        <div className="flex items-center justify-between mt-2">
+                                            <button 
+                                                onClick={() => likeMessage(message.id)}
+                                                className="flex items-center space-x-1 text-xs text-gray-500 hover:text-red-600 transition-colors"
+                                            >
+                                                <span>❤️</span>
+                                                <span>{message.likes}</span>
+                                            </button>
+                                            <button className="text-xs text-gray-500 hover:text-gray-700">
+                                                Reply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Message Input */}
+                        <div className="p-4 border-t bg-white">
                             <div className="flex space-x-2">
                                 <input
                                     type="text"
-                                    placeholder="Send encouragement..."
-                                    className="flex-1 p-3 border border-gray-300 rounded-lg"
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                                    placeholder="Send encouragement to fellow heroes..."
+                                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                                 />
-                                <button className="bg-orange-500 text-white px-4 py-3 rounded-lg">
+                                <button
+                                    onClick={sendMessage}
+                                    className="bg-red-800 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                                    disabled={!newMessage.trim()}
+                                >
                                     Send
                                 </button>
                             </div>
+                        </div>
 
-                            {/* Bottom Navigation */}
-                            <div className="flex justify-around py-4 border-t border-gray-200 mt-8">
-                                <button
+                        {/* Bottom Navigation */}
+                        <div className="flex justify-around py-3 border-t border-gray-200 bg-white">
+                            <button
+                                onClick={() => setCurrentPage('home')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">🏠</div>
+                                <span className="text-xs mt-1">Home</span>
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage('goals')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">🎯</div>
+                                <span className="text-xs mt-1">Goals</span>
+                            </button>
+                            <button className="flex flex-col items-center text-orange-500">
+                                <div className="text-xl">👥</div>
+                                <span className="text-xs mt-1">Heroes</span>
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage('profile')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">👤</div>
+                                <span className="text-xs mt-1">Profile</span>
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Achievements Page
+            if (currentPage === 'achievements') {
+                return (
+                    <div className="app-container">
+                        <Notification />
+                        
+                        {/* Header */}
+                        <div className="rene-gradient p-6 text-white">
+                            <div className="flex items-center space-x-3 mb-4">
+                                <button 
                                     onClick={() => setCurrentPage('home')}
-                                    className="flex flex-col items-center text-gray-500"
+                                    className="text-2xl"
                                 >
-                                    🏠
-                                    <span className="text-xs mt-1">Home</span>
+                                    ←
                                 </button>
-                                <button
-                                    onClick={() => setCurrentPage('goals')}
-                                    className="flex flex-col items-center text-gray-500"
+                                <ReneLogo />
+                                <span className="font-bold text-lg">Achievements</span>
+                            </div>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            <div className="text-center">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">🏆 Your Trophies</h2>
+                                <p className="text-gray-600">
+                                    {achievements.filter(a => a.unlocked).length} of {achievements.length} unlocked
+                                </p>
+                            </div>
+
+                            {/* Achievement Grid */}
+                            <div className="grid grid-cols-2 gap-4">
+                                {achievements.map(achievement => (
+                                    <div 
+                                        key={achievement.id}
+                                        className={`p-4 rounded-xl border-2 text-center transition-all ${
+                                            achievement.unlocked 
+                                                ? 'bg-gradient-to-br from-yellow-100 to-orange-100 border-yellow-300 shadow-lg' 
+                                                : 'bg-gray-100 border-gray-200'
+                                        }`}
+                                    >
+                                        <div className={`text-4xl mb-2 ${!achievement.unlocked && 'grayscale opacity-50'}`}>
+                                            {achievement.icon}
+                                        </div>
+                                        <h3 className={`font-bold text-sm ${
+                                            achievement.unlocked ? 'text-orange-800' : 'text-gray-500'
+                                        }`}>
+                                            {achievement.title}
+                                        </h3>
+                                        <p className={`text-xs mt-1 ${
+                                            achievement.unlocked ? 'text-orange-600' : 'text-gray-400'
+                                        }`}>
+                                            {achievement.description}
+                                        </p>
+                                        {achievement.unlocked && (
+                                            <div className="mt-2">
+                                                <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                                                    Unlocked!
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Progress to next achievement */}
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                <h3 className="font-bold text-gray-800 mb-3">🎯 Next Goal</h3>
+                                <div className="space-y-3">
+                                    <div>
+                                        <div className="flex justify-between text-sm">
+                                            <span>Step Master (10,000 steps)</span>
+                                            <span>{streakData.stepCount}/10,000</span>
+                                        </div>
+                                        <div className="bg-gray-200 rounded-full h-2 mt-1">
+                                            <div 
+                                                className="bg-green-500 rounded-full h-2 transition-all"
+                                                style={{ width: `${(streakData.stepCount / 10000) * 100}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between text-sm">
+                                            <span>Consistency King (30-day streak)</span>
+                                            <span>{streakData.currentStreak}/30</span>
+                                        </div>
+                                        <div className="bg-gray-200 rounded-full h-2 mt-1">
+                                            <div 
+                                                className="bg-orange-500 rounded-full h-2 transition-all"
+                                                style={{ width: `${(streakData.currentStreak / 30) * 100}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bottom Navigation */}
+                        <div className="flex justify-around py-3 border-t border-gray-200 bg-white">
+                            <button
+                                onClick={() => setCurrentPage('home')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">🏠</div>
+                                <span className="text-xs mt-1">Home</span>
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage('goals')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">🎯</div>
+                                <span className="text-xs mt-1">Goals</span>
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage('chat')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">👥</div>
+                                <span className="text-xs mt-1">Heroes</span>
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage('profile')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">👤</div>
+                                <span className="text-xs mt-1">Profile</span>
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Profile Page
+            if (currentPage === 'profile') {
+                return (
+                    <div className="app-container">
+                        <Notification />
+                        
+                        {/* Header */}
+                        <div className="rene-gradient p-6 text-white">
+                            <div className="flex items-center space-x-3 mb-4">
+                                <button 
+                                    onClick={() => setCurrentPage('home')}
+                                    className="text-2xl"
                                 >
-                                    🎯
-                                    <span className="text-xs mt-1">Goals</span>
+                                    ←
                                 </button>
-                                <button className="flex flex-col items-center text-orange-500">
-                                    👥
-                                    <span className="text-xs mt-1">Heroes</span>
+                                <ReneLogo />
+                                <span className="font-bold text-lg">Profile</span>
+                            </div>
+                            
+                            {/* Profile Header */}
+                            <div className="text-center">
+                                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <span className="text-3xl">🦸‍♀️</span>
+                                </div>
+                                <h2 className="text-xl font-bold">{heroData.name}</h2>
+                                <p className="text-red-200">Level {heroData.level} Kidney Health Hero</p>
+                                <p className="text-red-300 text-sm">Member since {heroData.joinDate}</p>
+                            </div>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            {/* Stats Overview */}
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                <h3 className="font-bold text-gray-800 mb-4">📊 Your Stats</h3>
+                                <div className="grid grid-cols-2 gap-4 text-center">
+                                    <div>
+                                        <div className="text-2xl font-bold text-orange-500">{heroData.totalPoints}</div>
+                                        <div className="text-xs text-gray-600">Total XP</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-2xl font-bold text-red-600">{streakData.bestStreak}</div>
+                                        <div className="text-xs text-gray-600">Best Streak</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-2xl font-bold text-blue-500">94%</div>
+                                        <div className="text-xs text-gray-600">Medication Rate</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-2xl font-bold text-green-500">{achievements.filter(a => a.unlocked).length}</div>
+                                        <div className="text-xs text-gray-600">Achievements</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Current Health Metrics */}
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                <h3 className="font-bold text-gray-800 mb-4">🩺 Health Metrics</h3>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">Current Streak</span>
+                                        <span className="font-bold text-orange-500">{streakData.currentStreak} days</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">Average Sleep</span>
+                                        <span className="font-bold text-purple-500">{streakData.sleepHours}h</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">Mood Rating</span>
+                                        <span className="font-bold text-yellow-500">{streakData.moodRating}/5 ⭐</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600">Daily Fluid Goal</span>
+                                        <span className="font-bold text-blue-500">{streakData.fluidTarget}ml</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Settings */}
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                <h3 className="font-bold text-gray-800 mb-4">⚙️ Settings</h3>
+                                <div className="space-y-3">
+                                    <button className="w-full text-left p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm">🔔 Notifications</span>
+                                            <span className="text-xs text-gray-500">→</span>
+                                        </div>
+                                    </button>
+                                    <button className="w-full text-left p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm">🎯 Goal Preferences</span>
+                                            <span className="text-xs text-gray-500">→</span>
+                                        </div>
+                                    </button>
+                                    <button className="w-full text-left p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm">🤖 AI Coach Settings</span>
+                                            <span className="text-xs text-gray-500">→</span>
+                                        </div>
+                                    </button>
+                                    <button className="w-full text-left p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm">📱 Export Data</span>
+                                            <span className="text-xs text-gray-500">→</span>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Support */}
+                            <div className="bg-orange-50 p-4 rounded-xl">
+                                <h3 className="font-bold text-gray-800 mb-2">💬 Need Help?</h3>
+                                <p className="text-sm text-gray-600 mb-3">
+                                    Connect with our support team or browse our help resources.
+                                </p>
+                                <button 
+                                    onClick={() => alert('🆘 Support: "Hello! How can we help you today?"')}
+                                    className="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
+                                >
+                                    Contact Support
                                 </button>
-                                <button className="flex flex-col items-center text-gray-500">
-                                    👤
-                                    <span className="text-xs mt-1">Profile</span>
+                            </div>
+                        </div>
+
+                        {/* Bottom Navigation */}
+                        <div className="flex justify-around py-3 border-t border-gray-200 bg-white">
+                            <button
+                                onClick={() => setCurrentPage('home')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">🏠</div>
+                                <span className="text-xs mt-1">Home</span>
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage('goals')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">🎯</div>
+                                <span className="text-xs mt-1">Goals</span>
+                            </button>
+                            <button
+                                onClick={() => setCurrentPage('chat')}
+                                className="flex flex-col items-center text-gray-500"
+                            >
+                                <div className="text-xl">👥</div>
+                                <span className="text-xs mt-1">Heroes</span>
+                            </button>
+                            <button className="flex flex-col items-center text-orange-500">
+                                <div className="text-xl">👤</div>
+                                <span className="text-xs mt-1">Profile</span>
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Mood Check-in Page
+            if (currentPage === 'mood') {
+                return (
+                    <div className="app-container">
+                        <Notification />
+                        
+                        {/* Header */}
+                        <div className="rene-gradient p-6 text-white">
+                            <div className="flex items-center space-x-3 mb-4">
+                                <button 
+                                    onClick={() => setCurrentPage('home')}
+                                    className="text-2xl"
+                                >
+                                    ←
                                 </button>
+                                <ReneLogo />
+                                <span className="font-bold text-lg">Mood Check-in</span>
+                            </div>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            <div className="text-center">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">😊 How are you feeling?</h2>
+                                <p className="text-gray-600">Your mental health matters just as much as your physical health</p>
+                            </div>
+
+                            {/* Mood Selection */}
+                            <div className="grid grid-cols-5 gap-2">
+                                {[
+                                    { emoji: '😢', value: 1, label: 'Very Sad' },
+                                    { emoji: '😕', value: 2, label: 'Sad' },
+                                    { emoji: '😐', value: 3, label: 'Okay' },
+                                    { emoji: '😊', value: 4, label: 'Good' },
+                                    { emoji: '😄', value: 5, label: 'Great' }
+                                ].map(mood => (
+                                    <button
+                                        key={mood.value}
+                                        onClick={() => {
+                                            setStreakData(prev => ({ ...prev, moodRating: mood.value }));
+                                            showNotification(`Mood logged! Thanks for checking in 😊`);
+                                            setTimeout(() => setCurrentPage('home'), 1500);
+                                        }}
+                                        className={`p-4 rounded-xl border-2 text-center transition-all hover:scale-105 ${
+                                            streakData.moodRating === mood.value 
+                                                ? 'border-orange-500 bg-orange-50' 
+                                                : 'border-gray-200 hover:border-orange-300'
+                                        }`}
+                                    >
+                                        <div className="text-3xl mb-1">{mood.emoji}</div>
+                                        <div className="text-xs text-gray-600">{mood.label}</div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Mood tracking tip */}
+                            <div className="bg-purple-50 p-4 rounded-xl">
+                                <h3 className="font-bold text-purple-800 mb-2">💡 Tip</h3>
+                                <p className="text-sm text-purple-700">
+                                    Regular mood tracking helps identify patterns and triggers. 
+                                    Consider what might be affecting your mood today - sleep, stress, social connections, or physical symptoms.
+                                </p>
+                            </div>
+
+                            {/* Quick actions for mood improvement */}
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                <h3 className="font-bold text-gray-800 mb-3">🌟 Feeling Down? Try These</h3>
+                                <div className="space-y-2">
+                                    <button className="w-full text-left p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                                        <div className="flex items-center space-x-3">
+                                            <span className="text-xl">🧘‍♀️</span>
+                                            <span className="text-sm font-medium">5-minute meditation</span>
+                                        </div>
+                                    </button>
+                                    <button className="w-full text-left p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                                        <div className="flex items-center space-x-3">
+                                            <span className="text-xl">🚶‍♀️</span>
+                                            <span className="text-sm font-medium">Take a short walk</span>
+                                        </div>
+                                    </button>
+                                    <button 
+                                        onClick={() => setCurrentPage('chat')}
+                                        className="w-full text-left p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                                    >
+                                        <div className="flex items-center space-x-3">
+                                            <span className="text-xl">👥</span>
+                                            <span className="text-sm font-medium">Chat with hero friends</span>
+                                        </div>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
