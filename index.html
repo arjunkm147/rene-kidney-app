@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RENÉ - Kidney Health Hero App</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <meta name="theme-color" content="#f97316">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="RENÉ">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f97316'/><text y='70' font-size='60' text-anchor='middle' x='50' fill='white'>🦸</text></svg>">
+    <link rel="manifest" href="manifest.json">
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      
+      body {
+        font-family: 'Inter', sans-serif;
+        background: #fef7ed;
+        margin: 0;
+        padding: 0;
+      }
+      
+      .mobile-container {
+        max-width: 375px;
+        margin: 0 auto;
+        min-height: 100vh;
+        background: white;
+        position: relative;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+      const { 
+        User, 
+        MessageCircle, 
+        Target, 
+        Award, 
+        Flame,
+        Settings,
+        Users,
+        BookOpen,
+        Heart,
+        Pill,
+        Droplets,
+        Activity,
+        Trophy,
+        Send,
+        ArrowLeft,
+        Home
+      } = lucide;
+
+      const ReneKidneyApp = () => {
+        const [currentPage, setCurrentPage] = useState('home');
+        const [streakData, setStreakData] = useState({
+          currentStreak: 7,
+          medicationTaken: true,
+          fluidIntake: 1700,
+          fluidTarget: 2000,
+          stepCount: 7400,
+          stepTarget: 8000
+        });
+        
+        const [heroData, setHeroData] = useState({
+          name: "Alex_Warrior",
+          level: 12,
+          xp: 2840,
+          xpToNext: 3000
+        });
+
+        const [chatMessages, setChatMessages] = useState([
+          { id: 1, user: "Jordan_Hero", message: "Just hit my 14-day streak! 💪", time: "2m ago", avatar: "🦸‍♀️" },
+          { id: 2, user: "Sam_Champion", message: "Way to go! I'm at 9 days myself 🔥", time: "5m ago", avatar: "🦸‍♂️" },
+          { id: 3, user: "Casey_Strong", message: "Anyone want to do a step challenge this week?", time: "12m ago", avatar: "🦸" }
+        ]);
+
+        const [newMessage, setNewMessage] = useState('');
+        const [onlineHeroes] = useState([
+          { name: "Jordan_Hero", status: "online" },
+          { name: "Sam_Champion", status: "online" },
+          { name: "Casey_Strong", status: "in_challenge" },
+          { name: "Taylor_Brave", status: "online" }
+        ]);
+
+        const updateGoal = (goalType, value) => {
+          setStreakData(prev => ({
+            ...prev,
+            [goalType]: value
+          }));
+        };
+
+        const sendMessage = () => {
+          if (newMessage.trim()) {
+            const message = {
+              id: chatMessages.length + 1,
+              user: heroData.name,
+              message: newMessage,
+              time: "now",
+              avatar: "🦸‍♀️"
+            };
+            setChatMessages(prev => [message, ...prev]);
+            setNewMessage('');
+          }
+        };
+
+        const openReneChat = () => {
+          alert("Opening RENÉ AI Health Coach... (This would connect to your existing RENÉ chat app)");
+        };
+
+        // Home Page Component
+        const HomePage = () => (
+          React.createElement('div', { className: "p-4 space-y-6" },
+            // Hero Header
+            React.createElement('div', { className: "bg-gradient-to-r from-orange-400 to-orange-500 p-6 rounded-xl text-white" },
+              React.createElement('h1', { className: "text-2xl font-bold mb-2" }, "Become a Kidney Health Hero"),
+              React.createElement('p', { className: "text-orange-100" }, "Join thousands of heroes on their journey to better kidney health")
+            ),
+
+            // Streak Card
+            React.createElement('div', { className: "bg-gradient-to-r from-orange-400 to-orange-500 p-6 rounded-xl text-white" },
+              React.createElement('div', { className: "flex justify-between items-center mb-4" },
+                React.createElement('div', { className: "flex items-center space-x-2" },
+                  React.createElement(Flame, { className: "w-6 h-6" }),
+                  React.createElement('h3', { className: "text-xl font-bold" }, `${streakData.currentStreak} Day Streak!`)
+                ),
+                React.createElement('span', { className: "bg-white/20 px-3 py-1 rounded-full text-sm font-medium" }, "Active")
+              ),
+              
+              // Streak dots
+              React.createElement('div', { className: "flex space-x-2 mb-6" },
+                [...Array(7)].map((_, i) =>
+                  React.createElement('div', {
+                    key: i,
+                    className: `w-4 h-4 rounded-full transition-all duration-300 ${
+                      i < streakData.currentStreak ? 'bg-white scale-110' : 'bg-white/30'
+                    }`
+                  })
+                ),
+                React.createElement('span', { className: "text-white/80 ml-2 text-sm" }, "7 Days")
+              ),
+
+              // Goals
+              React.createElement('div', { className: "space-y-3" },
+                React.createElement('div', { className: "flex justify-between items-center" },
+                  React.createElement('span', { className: "flex items-center space-x-2" },
+                    React.createElement('span', null, "💊"),
+                    React.createElement('span', null, "Medication Adherence")
+                  ),
+                  React.createElement('button', {
+                    onClick: () => updateGoal('medicationTaken', !streakData.medicationTaken),
+                    className: `px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                      streakData.medicationTaken ? 'bg-green-500 text-white' : 'bg-white/20 text-white hover:bg-white/30'
+                    }`
+                  }, streakData.medicationTaken ? '100% ✓' : 'Mark Complete')
+                ),
+                
+                React.createElement('div', { className: "flex justify-between items-center" },
+                  React.createElement('span', { className: "flex items-center space-x-2" },
+                    React.createElement('span', null, "💧"),
+                    React.createElement('span', null, "Fluid Target")
+                  ),
+                  React.createElement('span', { className: "text-cyan-200 font-medium" },
+                    `${Math.round((streakData.fluidIntake / streakData.fluidTarget) * 100)}% `,
+                    React.createElement('span', { className: "text-xs ml-1" }, `(${streakData.fluidIntake}ml)`)
+                  )
+                ),
+                
+                React.createElement('div', { className: "flex justify-between items-center" },
+                  React.createElement('span', { className: "flex items-center space-x-2" },
+                    React.createElement('span', null, "👟"),
+                    React.createElement('span', null, "Step Count")
+                  ),
+                  React.createElement('span', { className: "text-orange-200 font-medium" },
+                    `${Math.round((streakData.stepCount / streakData.stepTarget) * 100)}%`,
+                    React.createElement('span', { className: "text-xs ml-1" }, `(${streakData.stepCount})`)
+                  )
+                )
+              ),
+
+              React.createElement('div', { className: "mt-4 text-center" },
+                React.createElement('span', { className: "text-sm bg-white/10 px-3 py-1 rounded-full" },
+                  "🏆 Keep going to unlock rewards!"
+                )
+              )
+            ),
+
+            // Hero Modules
+            React.createElement('div', { className: "space-y-4" },
+              React.createElement('div', {
+                onClick: () => setCurrentPage('goals'),
+                className: "bg-gray-50 p-4 rounded-xl flex items-center space-x-4 cursor-pointer hover:bg-gray-100 transition-colors"
+              },
+                React.createElement('div', { className: "bg-orange-100 p-3 rounded-lg" },
+                  React.createElement(Settings, { className: "w-6 h-6 text-orange-600" })
+                ),
+                React.createElement('div', { className: "flex-1" },
+                  React.createElement('h3', { className: "font-semibold text-gray-800" }, "Mission Command Center"),
+                  React.createElement('p', { className: "text-gray-600 text-sm" }, "Get personalized guidance from RENÉ, your AI health coach")
+                )
+              ),
+
+              React.createElement('div', { className: "bg-gray-50 p-4 rounded-xl flex items-center space-x-4" },
+                React.createElement('div', { className: "bg-orange-100 p-3 rounded-lg" },
+                  React.createElement(Target, { className: "w-6 h-6 text-orange-600" })
+                ),
+                React.createElement('div', { className: "flex-1" },
+                  React.createElement('h3', { className: "font-semibold text-gray-800" }, "Power Source Management"),
+                  React.createElement('p', { className: "text-gray-600 text-sm" }, "Track medications and maintain your health powers")
+                )
+              ),
+
+              React.createElement('div', { className: "bg-gray-50 p-4 rounded-xl flex items-center space-x-4" },
+                React.createElement('div', { className: "bg-green-500 p-3 rounded-lg" },
+                  React.createElement(BookOpen, { className: "w-6 h-6 text-white" })
+                ),
+                React.createElement('div', { className: "flex-1" },
+                  React.createElement('h3', { className: "font-semibold text-gray-800" }, "Hero Training Academy"),
+                  React.createElement('p', { className: "text-gray-600 text-sm" }, "Learn and grow with gamified education modules"),
+                  React.createElement('span', { className: "bg-orange-500 text-white px-2 py-1 rounded text-xs font-medium" }, "Active")
+                )
+              ),
+
+              React.createElement('div', {
+                onClick: () => setCurrentPage('heroAlliance'),
+                className: "bg-gray-50 p-4 rounded-xl flex items-center space-x-4 cursor-pointer hover:bg-gray-100 transition-colors"
+              },
+                React.createElement('div', { className: "bg-purple-500 p-3 rounded-lg" },
+                  React.createElement(Users, { className: "w-6 h-6 text-white" })
+                ),
+                React.createElement('div', { className: "flex-1" },
+                  React.createElement('h3', { className: "font-semibold text-gray-800" }, "Hero Alliance Network"),
+                  React.createElement('p', { className: "text-gray-600 text-sm" }, "Connect with fellow heroes for support and motivation"),
+                  React.createElement('span', { className: "bg-orange-500 text-white px-2 py-1 rounded text-xs font-medium" }, "Active")
+                )
+              )
+            ),
+
+            // RENÉ Chat Button and Quick Actions
+            React.createElement('div', { className: "space-y-4" },
+              React.createElement('h3', { className: "text-lg font-semibold text-gray-800" }, "How can RENÉ help you today?"),
+              React.createElement('button', {
+                onClick: openReneChat,
+                className: "w-full bg-orange-500 text-white p-4 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-orange-600 transition-colors"
+              },
+                React.createElement(MessageCircle, { className: "w-5 h-5" }),
+                React.createElement('span', null, "Chat with RENÉ")
+              ),
+
+              // Quick Action Cards
+              React.createElement('div', { className: "grid grid-cols-2 gap-4" },
+                React.createElement('div', { className: "bg-white p-4 rounded-xl border border-gray-200 text-center" },
+                  React.createElement(Pill, { className: "w-8 h-8 text-orange-500 mx-auto mb-2" }),
+                  React.createElement('h4', { className: "font-semibold text-gray-800" }, "Medications"),
+                  React.createElement('p', { className: "text-gray-600 text-sm" }, "Drug guide")
+                ),
+                React.createElement('div', { className: "bg-white p-4 rounded-xl border border-gray-200 text-center" },
+                  React.createElement(Users, { className: "w-8 h-8 text-orange-500 mx-auto mb-2" }),
+                  React.createElement('h4', { className: "font-semibold text-gray-800" }, "Peer Support"),
+                  React.createElement('p', { className: "text-gray-600 text-sm" }, "Connect")
+                ),
+                React.createElement('div', { className: "bg-white p-4 rounded-xl border border-gray-200 text-center" },
+                  React.createElement(BookOpen, { className: "w-8 h-8 text-orange-500 mx-auto mb-2" }),
+                  React.createElement('h4', { className: "font-semibold text-gray-800" }, "Education"),
+                  React.createElement('p', { className: "text-gray-600 text-sm" }, "Learn more")
+                ),
+                React.createElement('div', { className: "bg-white p-4 rounded-xl border border-gray-200 text-center" },
+                  React.createElement(Heart, { className: "w-8 h-8 text-orange-500 mx-auto mb-2" }),
+                  React.createElement('h4', { className: "font-semibold text-gray-800" }, "Wellness"),
+                  React.createElement('p', { className: "text-gray-600 text-sm" }, "Mental health")
+                )
+              ),
+
+              React.createElement('p', { className: "text-center text-gray-500 text-sm" },
+                "Tap any button to get started with your kidney health journey"
+              )
+            )
+          )
+        );
+
+        // Hero Alliance Page Component
+        const HeroAlliancePage = () => (
+          React.createElement('div', { className: "flex flex-col h-screen" },
+            // Header
+            React.createElement('div', { className: "bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4" },
+              React.createElement('div', { className: "flex items-center space-x-3 mb-4" },
+                React.createElement('button', {
+                  onClick: () => setCurrentPage('home'),
+                  className: "p-1 hover:bg-white/20 rounded"
+                },
+                  React.createElement(ArrowLeft, { className: "w-5 h-5" })
+                ),
+                React.createElement('h1', { className: "text-xl font-bold" }, "Hero Alliance Network")
+              ),
+              
+              // Online Heroes
+              React.createElement('div', { className: "bg-white/10 p-3 rounded-lg" },
+                React.createElement('h3', { className: "font-semibold mb-2" }, `Heroes Online (${onlineHeroes.filter(h => h.status === 'online').length})`),
+                React.createElement('div', { className: "flex flex-wrap gap-2" },
+                  onlineHeroes.map(hero =>
+                    React.createElement('div', {
+                      key: hero.name,
+                      className: "flex items-center space-x-1 bg-white/20 px-2 py-1 rounded-full text-sm"
+                    },
+                      React.createElement('div', {
+                        className: `w-2 h-2 rounded-full ${
+                          hero.status === 'online' ? 'bg-green-400' : 
+                          hero.status === 'in_challenge' ? 'bg-yellow-400' : 'bg-gray-400'
+                        }`
+                      }),
+                      React.createElement('span', null, hero.name)
+                    )
+                  )
+                )
+              )
+            ),
+
+            // Quick Actions
+            React.createElement('div', { className: "p-4 bg-gray-50 border-b" },
+              React.createElement('div', { className: "flex space-x-3" },
+                React.createElement('button', { className: "flex-1 bg-orange-500 text-white py-2 px-3 rounded-lg text-sm font-medium" }, "💬 Chat"),
+                React.createElement('button', { className: "flex-1 bg-green-500 text-white py-2 px-3 rounded-lg text-sm font-medium" }, "⚔️ Challenge"),
+                React.createElement('button', { className: "flex-1 bg-purple-500 text-white py-2 px-3 rounded-lg text-sm font-medium" }, "🏆 Leaderboard")
+              )
+            ),
+
+            // Messages
+            React.createElement('div', { className: "flex-1 p-4 space-y-3 overflow-y-auto" },
+              chatMessages.map(message =>
+                React.createElement('div', { key: message.id, className: "flex space-x-3" },
+                  React.createElement('div', { className: "w-10 h-10 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold" },
+                    message.avatar
+                  ),
+                  React.createElement('div', { className: "flex-1" },
+                    React.createElement('div', { className: "flex items-center space-x-2" },
+                      React.createElement('span', { className: "font-semibold text-gray-800" }, message.user),
+                      React.createElement('span', { className: "text-xs text-gray-500" }, message.time)
+                    ),
+                    React.createElement('p', { className: "text-gray-700" }, message.message)
+                  )
+                )
+              )
+            ),
+
+            // Message Input
+            React.createElement('div', { className: "p-4 border-t bg-white" },
+              React.createElement('div', { className: "flex space-x-2" },
+                React.createElement('input', {
+                  type: "text",
+                  value: newMessage,
+                  onChange: (e) => setNewMessage(e.target.value),
+                  onKeyPress: (e) => e.key === 'Enter' && sendMessage(),
+                  placeholder: "Send encouragement to fellow heroes...",
+                  className: "flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                }),
+                React.createElement('button', {
+                  onClick: sendMessage,
+                  className: "bg-orange-500 text-white p-3 rounded-lg hover:bg-orange-600 transition-colors"
+                },
+                  React.createElement(Send, { className: "w-5 h-5" })
+                )
+              )
+            )
+          )
+        );
+
+        // Goals Page Component
+        const GoalsPage = () => (
+          React.createElement('div', { className: "p-4 space-y-6" },
+            React.createElement('div', { className: "flex items-center space-x-3 mb-6" },
+              React.createElement('button', {
+                onClick: () => setCurrentPage('home'),
+                className: "p-1 hover:bg-gray-200 rounded"
+              },
+                React.createElement(ArrowLeft, { className: "w-5 h-5" })
+              ),
+              React.createElement('h1', { className: "text-xl font-bold" }, "Mission Command Center")
+            ),
+
+            // Hero Stats
+            React.createElement('div', { className: "bg-gradient-to-r from-orange-400 to-orange-500 p-6 rounded-xl text-white" },
+              React.createElement('div', { className: "flex justify-between items-center" },
+                React.createElement('div', null,
+                  React.createElement('h2', { className: "text-2xl font-bold" }, heroData.name),
+                  React.createElement('p', { className: "text-orange-100" }, `Level ${heroData.level} Hero`)
+                ),
+                React.createElement('div', { className: "text-right" },
+                  React.createElement('p', { className: "text-sm text-orange-100" }, "XP Progress"),
+                  React.createElement('p', { className: "font-bold" }, `${heroData.xp} / ${heroData.xpToNext}`)
+                )
+              ),
+              React.createElement('div', { className: "mt-4 bg-white/20 rounded-full h-2" },
+                React.createElement('div', {
+                  className: "bg-white rounded-full h-2 transition-all duration-500",
+                  style: { width: `${(heroData.xp / heroData.xpToNext) * 100}%` }
+                })
+              )
+            ),
+
+            // Goals sections would continue here...
+            React.createElement('div', { className: "text-center p-8" },
+              React.createElement('h3', { className: "text-lg font-semibold mb-4" }, "Daily Goals Coming Soon!"),
+              React.createElement('p', { className: "text-gray-600" }, "Interactive goal tracking will be available in the next update.")
+            ),
+
+            // RENÉ Chat Button
+            React.createElement('button', {
+              onClick: openReneChat,
+              className: "w-full bg-orange-500 text-white p-4 rounded-xl font-semibold flex items-center justify-center space-x-2 hover:bg-orange-600 transition-colors"
+            },
+              React.createElement(MessageCircle, { className: "w-5 h-5" }),
+              React.createElement('span', null, "Ask RENÉ for Health Guidance")
+            )
+          )
+        );
+
+        // Bottom Navigation
+        const Navigation = () => (
+          React.createElement('div', { className: "fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm bg-white border-t border-gray-200" },
+            React.createElement('div', { className: "flex justify-around py-2" },
+              React.createElement('button', {
+                onClick: () => setCurrentPage('home'),
+                className: `flex flex-col items-center py-2 px-4 ${
+                  currentPage === 'home' ? 'text-orange-500' : 'text-gray-500'
+                }`
+              },
+                React.createElement(Home, { className: "w-5 h-5" }),
+                React.createElement('span', { className: "text-xs mt-1" }, "Home")
+              ),
+              React.createElement('button', {
+                onClick: () => setCurrentPage('goals'),
+                className: `flex flex-col items-center py-2 px-4 ${
+                  currentPage === 'goals' ? 'text-orange-500' : 'text-gray-500'
+                }`
+              },
+                React.createElement(Target, { className: "w-5 h-5" }),
+                React.createElement('span', { className: "text-xs mt-1" }, "Goals")
+              ),
+              React.createElement('button', {
+                onClick: () => setCurrentPage('heroAlliance'),
+                className: `flex flex-col items-center py-2 px-4 ${
+                  currentPage === 'heroAlliance' ? 'text-orange-500' : 'text-gray-500'
+                }`
+              },
+                React.createElement(Users, { className: "w-5 h-5" }),
+                React.createElement('span', { className: "text-xs mt-1" }, "Heroes")
+              ),
+              React.createElement('button', { className: "flex flex-col items-center py-2 px-4 text-gray-500" },
+                React.createElement(User, { className: "w-5 h-5" }),
+                React.createElement('span', { className: "text-xs mt-1" }, "Profile")
+              )
+            )
+          )
+        );
+
+        return (
+          React.createElement('div', { className: "mobile-container" },
+            currentPage === 'home' && React.createElement(HomePage),
+            currentPage === 'heroAlliance' && React.createElement(HeroAlliancePage),
+            currentPage === 'goals' && React.createElement(GoalsPage),
+            React.createElement(Navigation)
+          )
+        );
+      };
+
+      ReactDOM.render(React.createElement(ReneKidneyApp), document.getElementById('root'));
+    </script>
+  </body>
+</html>
