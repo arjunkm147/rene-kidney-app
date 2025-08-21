@@ -1,10 +1,8 @@
 // sw.js
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (evt) => {
-  evt.waitUntil(self.clients.claim());
-});
+self.addEventListener('activate', (evt) => { evt.waitUntil(self.clients.claim()); });
 
-// When a notification is clicked, focus an existing tab or open one.
+// Focus app when a notification is clicked
 self.addEventListener('notificationclick', (event) => {
   const url = (event.notification && event.notification.data && event.notification.data.url) || '/';
   event.notification.close();
