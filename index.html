@@ -130,7 +130,7 @@
 
       const [todayGoals, setTodayGoals] = useState([
         { id: 1, title: 'Morning Medication', completed: true, xp: 50, icon: '💊' },
-        { id: 2, title: 'Hydration Target (≤ 2L)', completed: false, xp: 30, icon: '💧' },
+        { id: 2, title: 'Hydration Target (≤ 1L)', completed: false, xp: 30, icon: '💧' },
         { id: 3, title: 'Walk 8000 steps', completed: false, xp: 40, icon: '👟' },
         { id: 4, title: 'Evening Medication', completed: false, xp: 50, icon: '💊' },
         { id: 5, title: 'Mood Check-in', completed: false, xp: 20, icon: '😊' }
@@ -240,7 +240,7 @@
           <Section className="py-6 space-y-8 pb-28">
             {/* Chat CTA */}
             <div className="space-y-3">
-              <h3 className="text-base sm:text-lg font-semibold text-slate-800">💬 How can RENÉ help you today?</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-slate-800">💬 How are you feeling today?</h3>
               <button onClick={() => alert('RENÉ: How are you feeling today?')}
                       className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-5 py-4 font-semibold text-white bg-gradient-to-tr from-accent-500 to-accent-600 shadow-soft hover:shadow-card transition">
                 <span className="text-xl">🤖</span><span>Chat with RENÉ</span>
