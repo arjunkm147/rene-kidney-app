@@ -236,13 +236,13 @@
 
       const [streakData] = useState({
         currentStreak: 5, bestStreak: 7, medicationTaken: true, medicationTime: '08:30 AM',
-        fluidIntake: 1400, fluidTarget: 2000, stepCount: 6200, stepTarget: 8000,
+        fluidIntake: 1400, fluidTarget: 1000, stepCount: 6200, stepTarget: 8000,
         intensityMinutes: 36, intensityTarget: 150, sleepHours: 7.5, moodRating: 4
       });
 
       const [todayGoals, setTodayGoals] = useState([
         { id: 1, title: 'Morning Medication', completed: true, xp: 50, icon: '💊' },
-        { id: 2, title: 'Hydration Target (≤ 2L)', completed: false, xp: 30, icon: '💧' },
+        { id: 2, title: 'Hydration Goal (≤ 1L)', completed: false, xp: 30, icon: '💧' },
         { id: 3, title: 'Walk 8000 steps', completed: false, xp: 40, icon: '👟' },
         { id: 4, title: 'Evening Medication', completed: false, xp: 50, icon: '💊' },
         { id: 5, title: 'Mood Check-in', completed: false, xp: 20, icon: '😊' }
@@ -554,7 +554,7 @@
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   <RowBtn label="Open Symptom Tracker" sub="Log symptoms" onClick={()=>setCurrentPage('symptoms')} />
                   <RowBtn label="Log a quick entry" sub="(demo)" onClick={()=>{ setCurrentPage('symptoms'); setTimeout(()=>alert('Logged (demo)'),0); }} />
-                  <RowBtn label="View history" sub="(coming soon)" onClick={()=>alert('History coming soon')} />
+                  <RowBtn label="View history" sub=" " onClick={()=>alert('History coming soon')} />
                 </div>
               </Dropdown>
 
@@ -562,7 +562,7 @@
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   <RowBtn label="Medication overview" sub="Today’s doses" onClick={()=>setCurrentPage('meds')} />
                   <RowBtn label="Configure med reminders" sub="Times & alerts" onClick={()=>setCurrentPage('reminders')} />
-                  <RowBtn label="Add a medication" sub="(coming soon)" onClick={()=>alert('Add medication coming soon')} />
+                  <RowBtn label="Add a medication" sub=" " onClick={()=>alert('Add medication coming soon')} />
                 </div>
               </Dropdown>
             </div>
