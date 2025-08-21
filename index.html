@@ -14,6 +14,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="RENÉ">
+    <link rel="manifest" href="manifest.json">
     
     <style>
         body {
@@ -46,6 +47,15 @@
             from { transform: translateY(20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
+        .bounce-in {
+            animation: bounceIn 0.5s ease-out;
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
         .notification {
             position: fixed;
             top: 20px;
@@ -54,33 +64,42 @@
             z-index: 1000;
             max-width: 300px;
         }
-        .rene-brand {
+        .rene-logo {
             display: inline-flex;
             align-items: center;
             gap: 8px;
         }
-        .brand-icon {
+        .kidney-shape {
+            position: relative;
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, #8b4513 0%, #a0522d 100%);
-            border-radius: 50%;
+            background: linear-gradient(135deg, #a75954 0%, #8b4513 100%);
+            border-radius: 50% 20% 50% 20%;
+            transform: rotate(-45deg);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #f4a261;
-            font-weight: bold;
-            font-size: 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
-        .brand-icon-large {
+        .kidney-shape-large {
             width: 60px;
             height: 60px;
-            font-size: 28px;
         }
-        .brand-icon-small {
+        .kidney-shape-small {
             width: 28px;
             height: 28px;
-            font-size: 14px;
+        }
+        .medical-cross {
+            color: #f4a261;
+            font-weight: bold;
+            transform: rotate(45deg);
+            font-size: 18px;
+        }
+        .medical-cross-large {
+            font-size: 24px;
+        }
+        .medical-cross-small {
+            font-size: 12px;
         }
     </style>
 </head>
@@ -88,10 +107,12 @@
     <div id="root">
         <div style="display: flex; justify-content: center; align-items: center; height: 100vh; color: #a75954;" class="loading-animation">
             <div style="text-align: center;">
-                <div style="margin: 0 auto 20px auto;" class="brand-icon brand-icon-large">R</div>
-                <div style="font-size: 28px; font-weight: bold; color: #a75954;">RENÉ</div>
-                <div style="font-size: 16px; color: #d4776b; margin-top: 4px;">Kidney Coach</div>
-                <div style="font-size: 12px; margin-top: 16px; opacity: 0.6;">Loading your health journey...</div>
+                <div style="margin: 0 auto 20px auto;" class="kidney-shape kidney-shape-large">
+                    <span class="medical-cross medical-cross-large">+</span>
+                </div>
+                <div style="font-size: 24px; font-weight: bold;">RENÉ</div>
+                <div style="font-size: 14px; opacity: 0.7;">Kidney Coach</div>
+                <div style="font-size: 12px; margin-top: 10px; opacity: 0.5;">Loading your health journey...</div>
             </div>
         </div>
     </div>
@@ -200,27 +221,35 @@
                 return (
                     <div className="app-container flex items-center justify-center">
                         <div className="text-center">
-                            <div className="brand-icon brand-icon-large mx-auto mb-4 loading-animation">R</div>
-                            <div className="text-3xl font-bold mb-2" style={{color: '#a75954'}}>RENÉ</div>
-                            <div className="text-lg" style={{color: '#d4776b'}}>Kidney Coach</div>
-                            <div className="mt-4 text-sm text-gray-500">Loading your health journey...</div>
+                            <div className="kidney-shape kidney-shape-large mx-auto mb-4 loading-animation">
+                                <span className="medical-cross medical-cross-large">+</span>
+                            </div>
+                            <div className="text-2xl font-bold text-red-800 mb-2">RENÉ</div>
+                            <div className="text-sm text-red-600">Kidney Coach</div>
+                            <div className="mt-4 text-xs text-gray-500">Loading your health journey...</div>
                         </div>
                     </div>
                 );
             }
 
-            // Simple Brand Component
-            const ReneBrand = ({ size = "medium" }) => {
-                const sizes = {
-                    small: { icon: "brand-icon brand-icon-small", text: "text-lg" },
-                    medium: { icon: "brand-icon", text: "text-xl" },
-                    large: { icon: "brand-icon brand-icon-large", text: "text-3xl" }
+            // RENÉ Logo Component with CSS Styling
+            const ReneLogo = ({ size = "medium" }) => {
+                const sizeClasses = {
+                    small: { kidney: "kidney-shape kidney-shape-small", cross: "medical-cross medical-cross-small", text: "text-sm" },
+                    medium: { kidney: "kidney-shape", cross: "medical-cross", text: "text-lg" },
+                    large: { kidney: "kidney-shape kidney-shape-large", cross: "medical-cross medical-cross-large", text: "text-2xl" }
                 };
 
                 return (
-                    <div className="rene-brand">
-                        <div className={sizes[size].icon}>R</div>
-                        <span className={`font-bold text-white ${sizes[size].text}`}>RENÉ</span>
+                    <div className="rene-logo">
+                        <div className={sizeClasses[size].kidney}>
+                            <span className={sizeClasses[size].cross}>+</span>
+                        </div>
+                        {size !== 'small' && (
+                            <span className={`font-bold text-white ${sizeClasses[size].text}`}>
+                                RENÉ
+                            </span>
+                        )}
                     </div>
                 );
             };
@@ -240,10 +269,10 @@
                     <div className="app-container">
                         <Notification />
                         
-                        {/* Header */}
+                        {/* Header with Logo */}
                         <div className="rene-gradient p-6 text-white">
                             <div className="flex justify-between items-center mb-4">
-                                <ReneBrand size="large" />
+                                <ReneLogo size="large" />
                                 <div className="text-right">
                                     <div className="text-sm opacity-90">Welcome back!</div>
                                     <div className="font-bold">{heroData.name}</div>
@@ -445,7 +474,10 @@
                 );
             }
 
-            // Simplified other pages for space
+            // Other pages would continue here with the same pattern...
+            // I'll add a simplified version for the demo
+
+            // Goals Page (simplified for space)
             if (currentPage === 'goals') {
                 return (
                     <div className="app-container">
@@ -454,7 +486,7 @@
                         <div className="rene-gradient p-6 text-white">
                             <div className="flex items-center space-x-3 mb-4">
                                 <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
-                                <ReneBrand size="medium" />
+                                <ReneLogo size="medium" />
                                 <span className="font-bold text-lg">Mission Center</span>
                             </div>
                         </div>
@@ -533,6 +565,7 @@
                 );
             }
 
+            // Chat Page (simplified)
             if (currentPage === 'chat') {
                 return (
                     <div className="app-container">
@@ -541,7 +574,7 @@
                         <div className="rene-gradient p-6 text-white">
                             <div className="flex items-center space-x-3 mb-4">
                                 <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
-                                <ReneBrand size="medium" />
+                                <ReneLogo size="medium" />
                                 <span className="font-bold text-lg">Hero Alliance</span>
                             </div>
                             
@@ -553,7 +586,7 @@
                             </div>
                         </div>
 
-                        <div className="p-4 space-y-3 flex-1 overflow-y-auto bg-gray-50" style={{minHeight: '400px'}}>
+                        <div className="p-4 space-y-3 flex-1 overflow-y-auto bg-gray-50">
                             {chatMessages.map(message => (
                                 <div key={message.id} className="flex space-x-3 slide-up">
                                     <div className="w-10 h-10 bg-gradient-to-r from-red-800 to-red-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
@@ -624,6 +657,7 @@
                 );
             }
 
+            // Profile Page (simplified)
             if (currentPage === 'profile') {
                 return (
                     <div className="app-container">
@@ -632,7 +666,7 @@
                         <div className="rene-gradient p-6 text-white">
                             <div className="flex items-center space-x-3 mb-4">
                                 <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
-                                <ReneBrand size="medium" />
+                                <ReneLogo size="medium" />
                                 <span className="font-bold text-lg">Profile</span>
                             </div>
                             
@@ -698,7 +732,7 @@
                                     Connect with our support team or browse our help resources.
                                 </p>
                                 <button 
-                                    onClick={() => alert('🆘 Support: "Hello Leandro! How can we help you today? Our team is available 24/7 for any questions about RENÉ or your kidney health journey."')}
+                                    onClick={() => alert('🆘 Support: "Hello! How can we help you today? Our team is available 24/7 for any questions about RENÉ or your kidney health journey."')}
                                     className="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
                                 >
                                     Contact Support
@@ -728,6 +762,7 @@
                 );
             }
 
+            // Achievements Page (simplified)
             if (currentPage === 'achievements') {
                 return (
                     <div className="app-container">
@@ -736,7 +771,7 @@
                         <div className="rene-gradient p-6 text-white">
                             <div className="flex items-center space-x-3 mb-4">
                                 <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
-                                <ReneBrand size="medium" />
+                                <ReneLogo size="medium" />
                                 <span className="font-bold text-lg">Achievements</span>
                             </div>
                         </div>
@@ -801,6 +836,92 @@
                                 <div className="text-xl">👤</div>
                                 <span className="text-xs mt-1">Profile</span>
                             </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Mood Check-in Page
+            if (currentPage === 'mood') {
+                return (
+                    <div className="app-container">
+                        <Notification />
+                        
+                        <div className="rene-gradient p-6 text-white">
+                            <div className="flex items-center space-x-3 mb-4">
+                                <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
+                                <ReneLogo size="medium" />
+                                <span className="font-bold text-lg">Mood Check-in</span>
+                            </div>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            <div className="text-center">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">😊 How are you feeling?</h2>
+                                <p className="text-gray-600">Your mental health matters just as much as your physical health</p>
+                            </div>
+
+                            <div className="grid grid-cols-5 gap-2">
+                                {[
+                                    { emoji: '😢', value: 1, label: 'Very Sad' },
+                                    { emoji: '😕', value: 2, label: 'Sad' },
+                                    { emoji: '😐', value: 3, label: 'Okay' },
+                                    { emoji: '😊', value: 4, label: 'Good' },
+                                    { emoji: '😄', value: 5, label: 'Great' }
+                                ].map(mood => (
+                                    <button
+                                        key={mood.value}
+                                        onClick={() => {
+                                            setStreakData(prev => ({ ...prev, moodRating: mood.value }));
+                                            showNotification(`Mood logged! Thanks for checking in 😊`);
+                                            setTimeout(() => setCurrentPage('home'), 1500);
+                                        }}
+                                        className={`p-4 rounded-xl border-2 text-center transition-all hover:scale-105 ${
+                                            streakData.moodRating === mood.value 
+                                                ? 'border-orange-500 bg-orange-50' 
+                                                : 'border-gray-200 hover:border-orange-300'
+                                        }`}
+                                    >
+                                        <div className="text-3xl mb-1">{mood.emoji}</div>
+                                        <div className="text-xs text-gray-600">{mood.label}</div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="bg-purple-50 p-4 rounded-xl">
+                                <h3 className="font-bold text-purple-800 mb-2">💡 Tip</h3>
+                                <p className="text-sm text-purple-700">
+                                    Regular mood tracking helps identify patterns and triggers. 
+                                    Consider what might be affecting your mood today - sleep, stress, social connections, or physical symptoms.
+                                </p>
+                            </div>
+
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                <h3 className="font-bold text-gray-800 mb-3">🌟 Feeling Down? Try These</h3>
+                                <div className="space-y-2">
+                                    <button className="w-full text-left p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                                        <div className="flex items-center space-x-3">
+                                            <span className="text-xl">🧘‍♀️</span>
+                                            <span className="text-sm font-medium">5-minute meditation</span>
+                                        </div>
+                                    </button>
+                                    <button className="w-full text-left p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                                        <div className="flex items-center space-x-3">
+                                            <span className="text-xl">🚶‍♀️</span>
+                                            <span className="text-sm font-medium">Take a short walk</span>
+                                        </div>
+                                    </button>
+                                    <button 
+                                        onClick={() => setCurrentPage('chat')}
+                                        className="w-full text-left p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+                                    >
+                                        <div className="flex items-center space-x-3">
+                                            <span className="text-xl">👥</span>
+                                            <span className="text-sm font-medium">Chat with hero friends</span>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 );
