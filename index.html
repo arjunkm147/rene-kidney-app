@@ -1,1059 +1,555 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RENÉ - Kidney Health Hero</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#a75954">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="RENÉ">
-    <link rel="apple-touch-icon" href="rene-logo-new.png">
-    <link rel="manifest" href="manifest.json">
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            margin: 0;
-            padding: 0;
-            line-height: 1.5;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RENÉ - Kidney Health Hero</title>
+
+  <!-- React + Babel + Tailwind CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind config (works with CDN) -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        container: { center: true, padding: { DEFAULT: '1rem', sm: '1.25rem', lg: '2rem' } },
+        extend: {
+          colors: {
+            brand: {
+              50: '#fff4f2', 100: '#fee6e2', 200: '#f8cdc7', 300: '#efaaa1', 400: '#e0877d',
+              500: '#c86e64', 600: '#a75954', 700: '#8d4946', 800: '#6f3b39', 900: '#5a3230'
+            },
+            accent: { 50: '#fff7ed', 100: '#ffedd5', 500: '#f97316', 600: '#ea580c' }
+          },
+          fontFamily: {
+            sans: [
+              'Inter', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial',
+              'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'
+            ]
+          },
+          borderRadius: { xl: '1rem', '2xl': '1.25rem' },
+          boxShadow: {
+            soft: '0 2px 10px rgba(15,23,42,0.06)',
+            card: '0 6px 24px rgba(15,23,42,0.08)'
+          }
         }
-        .app-container {
-            max-width: 375px;
-            margin: 0 auto;
-            min-height: 100vh;
-            background: #ffffff;
-            box-shadow: 0 0 50px rgba(0,0,0,0.12);
-            position: relative;
-        }
-        .rene-gradient {
-            background: linear-gradient(135deg, #8b5a5a 0%, #a0706e 25%, #b8857f 50%, #d4a574 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        .rene-gradient::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%);
-            pointer-events: none;
-        }
-        .loading-animation {
-            animation: pulse 2s ease-in-out infinite alternate;
-        }
-        @keyframes pulse {
-            from { opacity: 0.7; transform: scale(0.98); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        .slide-up {
-            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes slideUp {
-            from { transform: translateY(24px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .notification {
-            position: fixed;
-            top: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            max-width: 340px;
-            backdrop-filter: blur(12px);
-            animation: slideDown 0.3s ease-out;
-        }
-        @keyframes slideDown {
-            from { transform: translateX(-50%) translateY(-100%); }
-            to { transform: translateX(-50%) translateY(0); }
-        }
-        .rene-brand {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .logo-image {
-            object-fit: contain;
-            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
-        }
-        .logo-image-large {
-            width: 64px;
-            height: 64px;
-        }
-        .logo-image-medium {
-            width: 48px;
-            height: 48px;
-        }
-        .logo-image-small {
-            width: 32px;
-            height: 32px;
-        }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.08),
-                0 4px 16px rgba(0, 0, 0, 0.04);
-        }
-        .professional-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            box-shadow: 
-                0 4px 16px rgba(0, 0, 0, 0.04),
-                0 2px 8px rgba(0, 0, 0, 0.02);
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .professional-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.08),
-                0 4px 16px rgba(0, 0, 0, 0.04);
-            border-color: #cbd5e1;
-        }
-        .streak-dot {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-        }
-        .streak-dot.active {
-            background: #ffffff;
-            box-shadow: 
-                0 0 0 2px rgba(255, 255, 255, 0.3),
-                0 4px 12px rgba(255, 255, 255, 0.2);
-            transform: scale(1.1);
-        }
-        .streak-dot.inactive {
-            background: rgba(255, 255, 255, 0.3);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-        }
-        .primary-button {
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-            border: none;
-            color: white;
-            font-weight: 600;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 
-                0 4px 16px rgba(249, 115, 22, 0.3),
-                0 2px 8px rgba(249, 115, 22, 0.2);
-        }
-        .primary-button:hover {
-            transform: translateY(-1px);
-            box-shadow: 
-                0 8px 24px rgba(249, 115, 22, 0.4),
-                0 4px 12px rgba(249, 115, 22, 0.3);
-        }
-        .secondary-button {
-            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-            border: 1px solid #cbd5e1;
-            color: #475569;
-            font-weight: 500;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .secondary-button:hover {
-            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
-            transform: translateY(-1px);
-        }
-        .success-button {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            border: none;
-            font-weight: 600;
-        }
-        .metric-display {
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-            transition: all 0.2s ease;
-        }
-        .metric-display:hover {
-            border-color: #cbd5e1;
-            transform: translateY(-1px);
-        }
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 6px;
-        }
-        .status-online { background: #10b981; }
-        .status-busy { background: #f59e0b; }
-        .status-offline { background: #6b7280; }
-        .progress-bar {
-            height: 6px;
-            background: #e2e8f0;
-            border-radius: 3px;
-            overflow: hidden;
-            position: relative;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
-            transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-            border-radius: 3px;
-        }
-        .floating-header {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-        }
-        .bottom-nav {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px);
-            border-top: 1px solid #e2e8f0;
-            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
-        }
-        .nav-item {
-            transition: all 0.2s ease;
-            border-radius: 8px;
-            padding: 8px;
-        }
-        .nav-item.active {
-            background: rgba(249, 115, 22, 0.1);
-            color: #f97316;
-        }
-        .nav-item:hover {
-            background: rgba(249, 115, 22, 0.05);
-        }
-        .achievement-card {
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        .achievement-card.unlocked {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #f59e0b 100%);
-            border: 2px solid #f59e0b;
-            box-shadow: 
-                0 8px 24px rgba(245, 158, 11, 0.2),
-                0 4px 12px rgba(245, 158, 11, 0.1);
-        }
-        .achievement-card.unlocked::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
-            animation: shimmer 3s infinite;
-        }
-        @keyframes shimmer {
-            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-        }
-        .text-shadow {
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        }
-        .micro-interaction {
-            transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .micro-interaction:active {
-            transform: scale(0.98);
-        }
-    </style>
+      }
+    }
+  </script>
+
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#a75954" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="RENÉ" />
+  <link rel="apple-touch-icon" href="rene-logo-new.png" />
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Fonts & base styles -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-grad-start: #f8fafc; /* slate-50 */
+      --bg-grad-end: #e2e8f0;   /* slate-200 */
+    }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, var(--bg-grad-start) 0%, var(--bg-grad-end) 100%);
+      margin: 0;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Motion safety */
+    @media (prefers-reduced-motion: reduce) {
+      * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+    }
+
+    /* Brand header gradient */
+    .rene-gradient { background: linear-gradient(135deg, #8b5a5a 0%, #a0706e 25%, #b8857f 50%, #d4a574 100%); }
+
+    /* Card tokens (kept minimal & professional) */
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0; /* slate-200 */
+      box-shadow: var(--card-shadow, 0 6px 24px rgba(15,23,42,0.06));
+      border-radius: 1rem; /* 16px */
+    }
+    .card-hover { transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(15,23,42,0.10); border-color: #cbd5e1; }
+
+    /* Subtle progress */
+    .progress-track { height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); border-radius: 999px; transition: width .4s cubic-bezier(.16,1,.3,1); }
+
+    /* App shell sizes: responsive upgrade from fixed 375px */
+    .app-shell { max-width: 100%; }
+    @media (min-width: 640px) { /* sm */ .app-shell { max-width: 480px; } }
+    @media (min-width: 768px) { /* md */ .app-shell { max-width: 800px; } }
+    @media (min-width: 1024px) { /* lg */ .app-shell { max-width: 1000px; } }
+
+    /* Sticky bars */
+    .floating-header { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); border-bottom: 1px solid rgba(226,232,240,.9); }
+    .bottom-nav { background: rgba(255,255,255,.95); backdrop-filter: blur(10px); border-top: 1px solid #e2e8f0; box-shadow: 0 -6px 24px rgba(15,23,42,.06); }
+
+    /* Notification */
+    .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; max-width: 520px; }
+  </style>
 </head>
 <body>
-    <div id="root">
-        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; color: #a75954;" class="loading-animation">
-            <div style="text-align: center;">
-                <img src="rene-logo-new.png" alt="RENÉ Logo" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 20px;" class="loading-animation" />
-                <div style="font-size: 28px; font-weight: bold; color: #a75954;">RENÉ</div>
-                <div style="font-size: 16px; color: #d4776b; margin-top: 4px;">Kidney Coach</div>
-                <div style="font-size: 12px; margin-top: 16px; opacity: 0.6;">Loading your health journey...</div>
-            </div>
-        </div>
+  <div id="root">
+    <div class="min-h-screen grid place-items-center text-brand-600">
+      <div class="text-center animate-pulse">
+        <img src="rene-logo-new.png" alt="RENÉ Logo" class="w-20 h-20 mx-auto mb-4 object-contain" />
+        <div class="text-3xl font-extrabold">RENÉ</div>
+        <div class="text-base text-brand-500 mt-1">Kidney Coach</div>
+        <div class="text-xs text-slate-500 mt-3">Loading your health journey...</div>
+      </div>
     </div>
+  </div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-        const App = () => {
-            const [currentPage, setCurrentPage] = useState('home');
-            const [loading, setLoading] = useState(true);
-            const [notification, setNotification] = useState(null);
-            
-            // Enhanced state
-            const [heroData, setHeroData] = useState({
-                name: "Leandro",
-                age: 15,
-                location: "Lausanne",
-                level: 8,
-                xp: 1840,
-                xpToNext: 2000,
-                totalPoints: 15420,
-                joinDate: "March 2024"
-            });
-            
-            const [streakData, setStreakData] = useState({
-                currentStreak: 5,
-                bestStreak: 7,
-                medicationTaken: true,
-                medicationTime: "08:30 AM",
-                fluidIntake: 1400,
-                fluidTarget: 2000,
-                stepCount: 6200,
-                stepTarget: 8000,
-                sleepHours: 7.5,
-                moodRating: 4
-            });
+    // Reusable tokens
+    const Shell = ({ children }) => (
+      <div className="app-shell container mx-auto min-h-screen bg-white md:rounded-2xl md:shadow-card md:border md:border-slate-200 relative">
+        {children}
+      </div>
+    );
 
-            const [todayGoals, setTodayGoals] = useState([
-                { id: 1, title: "Morning Medication", completed: true, xp: 50, icon: "💊" },
-                { id: 2, title: "Fluid Goal (2L)", completed: false, xp: 30, icon: "💧" },
-                { id: 3, title: "Walk 8000 steps", completed: false, xp: 40, icon: "👟" },
-                { id: 4, title: "Evening Medication", completed: false, xp: 50, icon: "💊" },
-                { id: 5, title: "Mood Check-in", completed: false, xp: 20, icon: "😊" }
-            ]);
+    const Section = ({ children, className = '' }) => (
+      <div className={`px-5 sm:px-6 md:px-8 ${className}`}>{children}</div>
+    );
 
-            const [chatMessages, setChatMessages] = useState([
-                { id: 1, user: "Sofia_Martinez", message: "Just completed my 7-day streak! 🎉", time: "5m", avatar: "🦸‍♀️", likes: 12 },
-                { id: 2, user: "Marcus_Johnson", message: "Anyone tried the new meditation module?", time: "12m", avatar: "🦸‍♂️", likes: 3 },
-                { id: 3, user: "Emma_Chen", message: "Remember: small steps every day! 💪", time: "25m", avatar: "🦸", likes: 8 },
-                { id: 4, user: "Ahmed_Hassan", message: "Hydration tip: Add lemon to make it tasty! 🍋", time: "1h", avatar: "🦸‍♀️", likes: 15 }
-            ]);
+    const Card = ({ children, className = '' }) => (
+      <div className={`card card-hover ${className}`}>{children}</div>
+    );
 
-            const [newMessage, setNewMessage] = useState('');
-            const [achievements, setAchievements] = useState([
-                { id: 1, title: "Week Warrior", description: "7-day streak completed", unlocked: true, icon: "🔥" },
-                { id: 2, title: "Hydration Hero", description: "Met fluid goals 10 days", unlocked: true, icon: "💧" },
-                { id: 3, title: "Step Master", description: "10,000 steps in a day", unlocked: false, icon: "👟" },
-                { id: 4, title: "Consistency King", description: "30-day streak", unlocked: false, icon: "👑" }
-            ]);
+    const Stat = ({ label, value, sub, className = '' }) => (
+      <div className={`rounded-xl bg-slate-50 border border-slate-200 text-center p-4 ${className}`}>
+        <div className="text-2xl font-bold mb-1">{value}</div>
+        <div className="text-xs font-medium text-slate-600">{label}</div>
+        {sub && <div className="text-[11px] text-slate-500 mt-1">{sub}</div>}
+      </div>
+    );
 
-            // Loading effect
-            useEffect(() => {
-                const timer = setTimeout(() => setLoading(false), 2000);
-                return () => clearTimeout(timer);
-            }, []);
+    const App = () => {
+      const [currentPage, setCurrentPage] = useState('home');
+      const [loading, setLoading] = useState(true);
+      const [notification, setNotification] = useState(null);
 
-            const showNotification = (message, type = 'success') => {
-                setNotification({ message, type });
-                setTimeout(() => setNotification(null), 3000);
-            };
+      const [heroData, setHeroData] = useState({
+        name: 'Leandro', age: 15, location: 'Lausanne', level: 8, xp: 1840, xpToNext: 2000, totalPoints: 15420, joinDate: 'March 2024'
+      });
 
-            const completeGoal = (goalId) => {
-                setTodayGoals(prev => prev.map(goal => 
-                    goal.id === goalId ? { ...goal, completed: true } : goal
-                ));
-                const goal = todayGoals.find(g => g.id === goalId);
-                if (goal && !goal.completed) {
-                    setHeroData(prev => ({ ...prev, xp: prev.xp + goal.xp }));
-                    showNotification(`🎉 +${goal.xp} XP! Great job completing ${goal.title}!`);
-                }
-            };
+      const [streakData, setStreakData] = useState({
+        currentStreak: 5, bestStreak: 7, medicationTaken: true, medicationTime: '08:30 AM',
+        fluidIntake: 1400, fluidTarget: 2000, stepCount: 6200, stepTarget: 8000, sleepHours: 7.5, moodRating: 4
+      });
 
-            const sendMessage = () => {
-                if (newMessage.trim()) {
-                    const message = {
-                        id: chatMessages.length + 1,
-                        user: heroData.name,
-                        message: newMessage,
-                        time: "now",
-                        avatar: "🦸‍♀️",
-                        likes: 0
-                    };
-                    setChatMessages(prev => [message, ...prev]);
-                    setNewMessage('');
-                    showNotification("Message sent to Hero Alliance! 💬");
-                }
-            };
+      const [todayGoals, setTodayGoals] = useState([
+        { id: 1, title: 'Morning Medication', completed: true, xp: 50, icon: '💊' },
+        { id: 2, title: 'Fluid Goal (2L)', completed: false, xp: 30, icon: '💧' },
+        { id: 3, title: 'Walk 8000 steps', completed: false, xp: 40, icon: '👟' },
+        { id: 4, title: 'Evening Medication', completed: false, xp: 50, icon: '💊' },
+        { id: 5, title: 'Mood Check-in', completed: false, xp: 20, icon: '😊' }
+      ]);
 
-            const likeMessage = (messageId) => {
-                setChatMessages(prev => prev.map(msg => 
-                    msg.id === messageId ? { ...msg, likes: msg.likes + 1 } : msg
-                ));
-            };
+      const [chatMessages, setChatMessages] = useState([
+        { id: 1, user: 'Sofia_Martinez', message: 'Just completed my 7-day streak! 🎉', time: '5m', avatar: '🦸‍♀️', likes: 12 },
+        { id: 2, user: 'Marcus_Johnson', message: 'Anyone tried the new meditation module?', time: '12m', avatar: '🦸‍♂️', likes: 3 },
+        { id: 3, user: 'Emma_Chen', message: 'Remember: small steps every day! 💪', time: '25m', avatar: '🦸', likes: 8 },
+        { id: 4, user: 'Ahmed_Hassan', message: 'Hydration tip: Add lemon to make it tasty! 🍋', time: '1h', avatar: '🦸‍♀️', likes: 15 }
+      ]);
 
-            if (loading) {
-                return (
-                    <div className="app-container flex items-center justify-center">
-                        <div className="text-center">
-                            <img 
-                                src="rene-logo-new.png" 
-                                alt="RENÉ Logo" 
-                                className="w-20 h-20 mx-auto mb-4 loading-animation"
-                                style={{ objectFit: 'contain' }}
-                            />
-                            <div className="text-3xl font-bold mb-2" style={{color: '#a75954'}}>RENÉ</div>
-                            <div className="text-lg" style={{color: '#d4776b'}}>Kidney Coach</div>
-                            <div className="mt-4 text-sm text-gray-500">Loading your health journey...</div>
-                        </div>
-                    </div>
-                );
-            }
+      const [newMessage, setNewMessage] = useState('');
+      const [achievements, setAchievements] = useState([
+        { id: 1, title: 'Week Warrior', description: '7-day streak completed', unlocked: true, icon: '🔥' },
+        { id: 2, title: 'Hydration Hero', description: 'Met fluid goals 10 days', unlocked: true, icon: '💧' },
+        { id: 3, title: 'Step Master', description: '10,000 steps in a day', unlocked: false, icon: '👟' },
+        { id: 4, title: 'Consistency King', description: '30-day streak', unlocked: false, icon: '👑' }
+      ]);
 
-            // RENÉ Logo Component with Real Image
-            const ReneBrand = ({ size = "medium" }) => {
-                const sizeClasses = {
-                    small: { img: "logo-image-small", text: "text-lg" },
-                    medium: { img: "logo-image-medium", text: "text-xl" },
-                    large: { img: "logo-image-large", text: "text-3xl" }
-                };
+      useEffect(() => { const t = setTimeout(() => setLoading(false), 600); return () => clearTimeout(t); }, []);
 
-                return (
-                    <div className="rene-brand">
-                        <img 
-                            src="rene-logo-new.png" 
-                            alt="RENÉ Logo" 
-                            className={`${sizeClasses[size].img} logo-image`}
-                        />
-                        <span className={`font-bold text-white ${sizeClasses[size].text} text-shadow`}>RENÉ</span>
-                    </div>
-                );
-            };
+      const notify = (message, type = 'success') => { setNotification({ message, type }); setTimeout(() => setNotification(null), 2500); };
 
-            // Notification Component - Enhanced
-            const Notification = () => notification && (
-                <div className={`notification rounded-2xl px-6 py-4 text-white font-semibold shadow-xl ${
-                    notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-                }`}>
-                    <div className="flex items-center space-x-2">
-                        <span className="text-xl">
-                            {notification.type === 'success' ? '✅' : '❌'}
-                        </span>
-                        <span>{notification.message}</span>
-                    </div>
+      const completeGoal = (goalId) => {
+        setTodayGoals(prev => prev.map(g => g.id === goalId ? { ...g, completed: true } : g));
+        const goal = todayGoals.find(g => g.id === goalId);
+        if (goal && !goal.completed) { setHeroData(p => ({ ...p, xp: p.xp + goal.xp })); notify(`+${goal.xp} XP • ${goal.title}`); }
+      };
+
+      const sendMessage = () => {
+        if (!newMessage.trim()) return;
+        const msg = { id: chatMessages.length + 1, user: heroData.name, message: newMessage, time: 'now', avatar: '🦸‍♀️', likes: 0 };
+        setChatMessages(prev => [msg, ...prev]); setNewMessage(''); notify('Message sent');
+      };
+
+      if (loading) {
+        return (
+          <Shell>
+            <div className="min-h-[60vh] grid place-items-center text-brand-600">
+              <div className="text-center animate-pulse">
+                <img src="rene-logo-new.png" alt="RENÉ Logo" className="w-20 h-20 mx-auto mb-4 object-contain" />
+                <div className="text-3xl font-extrabold">RENÉ</div>
+                <div className="text-base text-brand-500 mt-1">Kidney Coach</div>
+                <div className="text-xs text-slate-500 mt-3">Loading your health journey...</div>
+              </div>
+            </div>
+          </Shell>
+        );
+      }
+
+      const ReneBrand = ({ size = 'md' }) => {
+        const sizes = { sm: ['w-8 h-8', 'text-lg'], md: ['w-12 h-12', 'text-2xl'], lg: ['w-16 h-16', 'text-3xl'] };
+        const [img, txt] = sizes[size] || sizes.md;
+        return (
+          <div className="inline-flex items-center gap-3 select-none">
+            <img src="rene-logo-new.png" alt="RENÉ" className={`${img} object-contain drop-shadow`} />
+            <span className={`font-extrabold text-white ${txt}`}>RENÉ</span>
+          </div>
+        );
+      };
+
+      const Notification = () => notification && (
+        <div className={`notification px-5 py-3 rounded-xl shadow-card text-white ${notification.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <span>{notification.type === 'success' ? '✅' : '⚠️'}</span>
+            <span>{notification.message}</span>
+          </div>
+        </div>
+      );
+
+      // ---------- Pages ----------
+      const Home = () => (
+        <Shell>
+          <Notification />
+
+          {/* Header */}
+          <div className="rene-gradient floating-header">
+            <Section className="py-6">
+              <div className="flex items-center justify-between">
+                <ReneBrand size="md" />
+                <div className="text-right text-white/95">
+                  <div className="text-xs opacity-90 font-medium">Welcome back</div>
+                  <div className="font-bold text-lg">{heroData.name}</div>
+                  <div className="text-[11px] opacity-85 mt-0.5">{heroData.age} • {heroData.location}</div>
                 </div>
-            );
+              </div>
 
-            // Enhanced Home Page
-            if (currentPage === 'home') {
-                return (
-                    <div className="app-container">
-                        <Notification />
-                        
-                        {/* Header */}
-                        <div className="rene-gradient p-8 text-white floating-header">
-                            <div className="flex justify-between items-center mb-6">
-                                <ReneBrand size="large" />
-                                <div className="text-right">
-                                    <div className="text-sm opacity-90 font-medium">Welcome back</div>
-                                    <div className="font-bold text-xl text-shadow">{heroData.name}</div>
-                                    <div className="text-xs opacity-80 mt-1">{heroData.age} years old • {heroData.location}</div>
-                                </div>
-                            </div>
-                            
-                            <div className="glass-card rounded-2xl p-6">
-                                <div className="flex justify-between items-center mb-4">
-                                    <div>
-                                        <div className="text-3xl font-bold text-gray-800">Level {heroData.level}</div>
-                                        <div className="text-sm text-gray-600 font-medium">Kidney Health Hero</div>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-2xl font-bold text-orange-600">{heroData.xp}</div>
-                                        <div className="text-xs text-gray-500 font-medium">XP Points</div>
-                                    </div>
-                                </div>
-                                <div className="progress-bar mb-2">
-                                    <div 
-                                        className="progress-fill"
-                                        style={{ width: `${(heroData.xp / heroData.xpToNext) * 100}%` }}
-                                    />
-                                </div>
-                                <div className="text-xs text-gray-600 font-medium">
-                                    {heroData.xpToNext - heroData.xp} XP to Level {heroData.level + 1}
-                                </div>
-                            </div>
-                        </div>
+              <Card className="mt-5 p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-2xl font-extrabold text-slate-800">Level {heroData.level}</div>
+                    <div className="text-xs text-slate-600 font-medium">Kidney Health Hero</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xl font-extrabold text-accent-600">{heroData.xp}</div>
+                    <div className="text-[11px] text-slate-500 font-medium">XP Points</div>
+                  </div>
+                </div>
+                <div className="progress-track mt-3">
+                  <div className="progress-fill" style={{ width: `${(heroData.xp / heroData.xpToNext) * 100}%` }} />
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-1.5">
+                  {heroData.xpToNext - heroData.xp} XP to Level {heroData.level + 1}
+                </div>
+              </Card>
+            </Section>
+          </div>
 
-                        <div className="p-6 space-y-8 pb-24">
-                            {/* Chat with RENÉ - Enhanced */}
-                            <div className="space-y-4">
-                                <h3 className="text-xl font-bold text-gray-800">💬 How can RENÉ help you today?</h3>
-                                <button 
-                                    onClick={() => alert('🤖 RENÉ: "Hello Leandro! How are you feeling today? I can help with medication reminders, answer questions about kidney health, or just chat about how your day is going. What would you like to talk about?"')}
-                                    className="w-full primary-button p-5 rounded-2xl font-semibold flex items-center justify-center space-x-3 micro-interaction"
-                                >
-                                    <span className="text-2xl">🤖</span>
-                                    <span className="text-lg">Chat with RENÉ</span>
-                                </button>
-                            </div>
+          <Section className="py-6 space-y-8 pb-28">
+            {/* Chat CTA */}
+            <div className="space-y-3">
+              <h3 className="text-base sm:text-lg font-semibold text-slate-800">💬 How can RENÉ help you today?</h3>
+              <button
+                onClick={() => alert('RENÉ: How are you feeling today?')}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-5 py-4 font-semibold text-white bg-gradient-to-tr from-accent-500 to-accent-600 shadow-soft hover:shadow-card transition"
+              >
+                <span className="text-xl">🤖</span>
+                <span>Chat with RENÉ</span>
+              </button>
+            </div>
 
-                            {/* Enhanced Streak Card */}
-                            <div className="bg-gradient-to-br from-orange-500 via-orange-400 to-amber-400 p-8 rounded-3xl text-white shadow-xl slide-up">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div>
-                                        <h3 className="text-3xl font-bold text-shadow mb-2">🔥 {streakData.currentStreak} Day Streak!</h3>
-                                        <p className="text-orange-100 text-sm font-medium">Personal best: {streakData.bestStreak} days</p>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="glass-card px-4 py-2 rounded-full text-sm font-bold text-orange-800">
-                                            Active
-                                        </div>
-                                        <div className="text-xs mt-2 opacity-80 font-medium">This week</div>
-                                    </div>
-                                </div>
-                                
-                                {/* Professional Streak visualization */}
-                                <div className="flex items-center justify-between mb-8">
-                                    {[...Array(7)].map((_, i) => (
-                                        <div
-                                            key={i}
-                                            className={`streak-dot ${
-                                                i < streakData.currentStreak ? 'active' : 'inactive'
-                                            }`}
-                                        />
-                                    ))}
-                                </div>
+            {/* Streak */}
+            <div className="rounded-2xl p-6 text-white shadow-card bg-gradient-to-tr from-orange-500 via-orange-400 to-amber-400">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-2xl font-extrabold mb-1">🔥 {streakData.currentStreak} Day Streak</h3>
+                  <p className="text-white/90 text-xs font-medium">Best: {streakData.bestStreak} days</p>
+                </div>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-white/90 text-orange-800">Active</span>
+              </div>
 
-                                {/* Enhanced Quick Stats */}
-                                <div className="grid grid-cols-3 gap-6">
-                                    <div className="text-center">
-                                        <div className="text-3xl mb-2">💊</div>
-                                        <div className="text-xs opacity-90 font-medium mb-1">Medicine</div>
-                                        <div className="text-xl font-bold">
-                                            {streakData.medicationTaken ? '✓' : '○'}
-                                        </div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-3xl mb-2">💧</div>
-                                        <div className="text-xs opacity-90 font-medium mb-1">Hydration</div>
-                                        <div className="text-xl font-bold">
-                                            {Math.round((streakData.fluidIntake/streakData.fluidTarget)*100)}%
-                                        </div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="text-3xl mb-2">👟</div>
-                                        <div className="text-xs opacity-90 font-medium mb-1">Steps</div>
-                                        <div className="text-xl font-bold">
-                                            {(streakData.stepCount/1000).toFixed(1)}k
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+              <div className="mt-5 grid grid-cols-7 gap-2">
+                {[...Array(7)].map((_, i) => (
+                  <div key={i} className={`h-3 rounded-full ${i < streakData.currentStreak ? 'bg-white' : 'bg-white/40'}`}></div>
+                ))}
+              </div>
 
-                            {/* Professional Goals Card */}
-                            <div className="professional-card rounded-2xl p-6">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                                        <span className="mr-3 text-2xl">🎯</span>
-                                        Today's Missions
-                                    </h3>
-                                    <div className="glass-card px-3 py-1 rounded-full">
-                                        <span className="text-sm font-bold text-gray-700">
-                                            {todayGoals.filter(g => g.completed).length}/{todayGoals.length}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    {todayGoals.slice(0, 3).map(goal => (
-                                        <div key={goal.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl professional-card">
-                                            <div className="flex items-center space-x-4">
-                                                <span className="text-2xl">{goal.icon}</span>
-                                                <div>
-                                                    <span className={`font-semibold ${goal.completed ? 'line-through text-gray-500' : 'text-gray-800'}`}>
-                                                        {goal.title}
-                                                    </span>
-                                                    <div className="text-xs text-gray-500 mt-1">
-                                                        {goal.completed ? 'Completed today' : `Earn ${goal.xp} XP`}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => completeGoal(goal.id)}
-                                                className={`px-4 py-2 rounded-xl font-semibold text-sm micro-interaction ${
-                                                    goal.completed 
-                                                        ? 'success-button' 
-                                                        : 'primary-button'
-                                                }`}
-                                                disabled={goal.completed}
-                                            >
-                                                {goal.completed ? '✓ Done' : 'Complete'}
-                                            </button>
-                                        </div>
-                                    ))}
-                                    <button 
-                                        onClick={() => setCurrentPage('goals')}
-                                        className="w-full text-center text-orange-600 font-semibold py-3 hover:bg-orange-50 rounded-xl transition-colors"
-                                    >
-                                        View All Goals →
-                                    </button>
-                                </div>
-                            </div>
+              <div className="mt-6 grid grid-cols-3 gap-4">
+                <Stat label="Medicine" value={streakData.medicationTaken ? '✓' : '○'} />
+                <Stat label="Hydration" value={`${Math.round((streakData.fluidIntake/streakData.fluidTarget)*100)}%`} />
+                <Stat label="Steps" value={`${(streakData.stepCount/1000).toFixed(1)}k`} />
+              </div>
+            </div>
 
-                            {/* Professional Hero Modules */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div 
-                                    onClick={() => setCurrentPage('goals')}
-                                    className="professional-card p-6 rounded-2xl cursor-pointer micro-interaction"
-                                >
-                                    <div className="text-3xl mb-3">⚙️</div>
-                                    <h4 className="font-bold text-gray-800 mb-1">Mission Center</h4>
-                                    <p className="text-sm text-gray-600">Track your daily goals</p>
-                                </div>
-
-                                <div 
-                                    onClick={() => setCurrentPage('chat')}
-                                    className="professional-card p-6 rounded-2xl cursor-pointer micro-interaction"
-                                >
-                                    <div className="text-3xl mb-3">👥</div>
-                                    <h4 className="font-bold text-gray-800 mb-1">Hero Alliance</h4>
-                                    <p className="text-sm text-gray-600">Connect & support</p>
-                                    <div className="flex items-center mt-2">
-                                        <span className="status-indicator status-online"></span>
-                                        <span className="text-xs text-green-600 font-semibold">4 heroes online</span>
-                                    </div>
-                                </div>
-
-                                <div 
-                                    onClick={() => setCurrentPage('achievements')}
-                                    className="professional-card p-6 rounded-2xl cursor-pointer micro-interaction"
-                                >
-                                    <div className="text-3xl mb-3">🏆</div>
-                                    <h4 className="font-bold text-gray-800 mb-1">Achievements</h4>
-                                    <p className="text-sm text-gray-600">Unlock rewards</p>
-                                </div>
-
-                                <div 
-                                    onClick={() => alert('🤖 RENÉ: "Hello! How can I help with your kidney health today? I can provide guidance on medication timing, fluid management, exercise recommendations, and emotional support. What would you like to know?"')}
-                                    className="professional-card p-6 rounded-2xl cursor-pointer micro-interaction"
-                                >
-                                    <div className="text-3xl mb-3">🤖</div>
-                                    <h4 className="font-bold text-gray-800 mb-1">Health Assistant</h4>
-                                    <p className="text-sm text-gray-600">Get AI guidance</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Professional Bottom Navigation */}
-                        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm bottom-nav">
-                            <div className="flex justify-around py-4 px-2">
-                                <button className="nav-item active flex flex-col items-center">
-                                    <div className="text-2xl mb-1">🏠</div>
-                                    <span className="text-xs font-semibold">Home</span>
-                                </button>
-                                <button
-                                    onClick={() => setCurrentPage('goals')}
-                                    className="nav-item flex flex-col items-center text-gray-500"
-                                >
-                                    <div className="text-2xl mb-1">🎯</div>
-                                    <span className="text-xs font-semibold">Goals</span>
-                                </button>
-                                <button
-                                    onClick={() => setCurrentPage('chat')}
-                                    className="nav-item flex flex-col items-center text-gray-500"
-                                >
-                                    <div className="text-2xl mb-1">👥</div>
-                                    <span className="text-xs font-semibold">Heroes</span>
-                                </button>
-                                <button
-                                    onClick={() => setCurrentPage('profile')}
-                                    className="nav-item flex flex-col items-center text-gray-500"
-                                >
-                                    <div className="text-2xl mb-1">👤</div>
-                                    <span className="text-xs font-semibold">Profile</span>
-                                </button>
-                            </div>
-                        </div>
+            {/* Goals preview */}
+            <Card className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><span>🎯</span> Today's Missions</h3>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-50 border text-xs font-bold text-slate-700">
+                  {todayGoals.filter(g => g.completed).length}/{todayGoals.length}
+                </span>
+              </div>
+              <div className="space-y-3">
+                {todayGoals.slice(0,3).map(goal => (
+                  <div key={goal.id} className="card-hover border rounded-xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{goal.icon}</span>
+                      <div>
+                        <div className={`font-semibold ${goal.completed ? 'line-through text-slate-500' : 'text-slate-800'}`}>{goal.title}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">{goal.completed ? 'Completed today' : `Earn ${goal.xp} XP`}</div>
+                      </div>
                     </div>
-                );
-            }
+                    <button
+                      onClick={() => completeGoal(goal.id)}
+                      disabled={goal.completed}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${goal.completed ? 'bg-emerald-600 text-white' : 'bg-accent-600 hover:bg-accent-500 text-white'}`}
+                    >
+                      {goal.completed ? '✓ Done' : 'Complete'}
+                    </button>
+                  </div>
+                ))}
+                <button onClick={() => setCurrentPage('goals')} className="w-full text-accent-600 font-semibold py-2 rounded-lg hover:bg-accent-50">View all goals →</button>
+              </div>
+            </Card>
 
-            // Goals Page
-            if (currentPage === 'goals') {
-                return (
-                    <div className="app-container">
-                        <Notification />
-                        
-                        <div className="rene-gradient p-8 text-white floating-header">
-                            <div className="flex items-center space-x-4 mb-4">
-                                <button onClick={() => setCurrentPage('home')} className="text-3xl hover:scale-110 transition-transform">
-                                    ←
-                                </button>
-                                <ReneBrand size="medium" />
-                                <span className="font-bold text-xl text-shadow">Mission Center</span>
-                            </div>
-                        </div>
+            {/* Modules */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="p-5 cursor-pointer" onClick={() => setCurrentPage('goals')}>
+                <div className="text-3xl mb-2">⚙️</div>
+                <div className="font-bold text-slate-800">Mission Center</div>
+                <div className="text-sm text-slate-600">Track your daily goals</div>
+              </Card>
+              <Card className="p-5 cursor-pointer" onClick={() => setCurrentPage('chat')}>
+                <div className="text-3xl mb-2">👥</div>
+                <div className="font-bold text-slate-800">Hero Alliance</div>
+                <div className="text-sm text-slate-600">Connect & support</div>
+                <div className="flex items-center gap-2 mt-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span><span className="text-[11px] font-semibold text-emerald-600">4 online</span></div>
+              </Card>
+              <Card className="p-5 cursor-pointer" onClick={() => setCurrentPage('achievements')}>
+                <div className="text-3xl mb-2">🏆</div>
+                <div className="font-bold text-slate-800">Achievements</div>
+                <div className="text-sm text-slate-600">Unlock rewards</div>
+              </Card>
+              <Card className="p-5 cursor-pointer" onClick={() => alert('How can I help?')}>
+                <div className="text-3xl mb-2">🤖</div>
+                <div className="font-bold text-slate-800">Health Assistant</div>
+                <div className="text-sm text-slate-600">Get AI guidance</div>
+              </Card>
+            </div>
+          </Section>
 
-                        <div className="p-6 space-y-8 pb-24">
-                            <div className="professional-card rounded-2xl p-6">
-                                <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                                    <span className="mr-3 text-2xl">📊</span>
-                                    Today's Progress
-                                </h3>
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="metric-display">
-                                        <div className="text-3xl font-bold text-green-500 mb-2">
-                                            {todayGoals.filter(g => g.completed).length}/{todayGoals.length}
-                                        </div>
-                                        <div className="text-sm text-gray-600 font-medium">Goals Complete</div>
-                                    </div>
-                                    <div className="metric-display">
-                                        <div className="text-3xl font-bold text-orange-500 mb-2">
-                                            {todayGoals.filter(g => g.completed).reduce((sum, g) => sum + g.xp, 0)}
-                                        </div>
-                                        <div className="text-sm text-gray-600 font-medium">XP Earned</div>
-                                    </div>
-                                </div>
-                            </div>
+          {/* Bottom nav */}
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-screen-lg bottom-nav">
+            <div className="mx-auto max-w-[1000px]">
+              <div className="grid grid-cols-4 gap-2 px-4 py-3">
+                <button className="flex flex-col items-center rounded-lg py-1 text-accent-600 bg-accent-50 font-semibold"><div className="text-xl">🏠</div><span className="text-[11px]">Home</span></button>
+                <button onClick={() => setCurrentPage('goals')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🎯</div><span className="text-[11px] font-medium">Goals</span></button>
+                <button onClick={() => setCurrentPage('chat')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👥</div><span className="text-[11px] font-medium">Heroes</span></button>
+                <button onClick={() => setCurrentPage('profile')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👤</div><span className="text-[11px] font-medium">Profile</span></button>
+              </div>
+            </div>
+          </div>
+        </Shell>
+      );
 
-                            <div className="space-y-4">
-                                <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                                    <span className="mr-3 text-2xl">🎯</span>
-                                    All Missions
-                                </h3>
-                                {todayGoals.map(goal => (
-                                    <div key={goal.id} className="professional-card rounded-2xl p-6">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center space-x-4">
-                                                <span className="text-3xl">{goal.icon}</span>
-                                                <div>
-                                                    <h4 className={`text-lg font-bold ${goal.completed ? 'line-through text-gray-500' : 'text-gray-800'}`}>
-                                                        {goal.title}
-                                                    </h4>
-                                                    <p className="text-sm text-gray-600 mt-1">
-                                                        {goal.completed ? 'Completed today! Great job!' : `Complete to earn ${goal.xp} XP`}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => completeGoal(goal.id)}
-                                                className={`px-6 py-3 rounded-xl font-bold micro-interaction ${
-                                                    goal.completed 
-                                                        ? 'success-button' 
-                                                        : 'primary-button'
-                                                }`}
-                                                disabled={goal.completed}
-                                            >
-                                                {goal.completed ? '✓ Done' : 'Complete'}
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+      const Goals = () => (
+        <Shell>
+          <Notification />
+          <div className="rene-gradient floating-header">
+            <Section className="py-5 flex items-center gap-3 text-white">
+              <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
+              <ReneBrand size="sm" />
+              <span className="ml-auto text-lg font-bold">Mission Center</span>
+            </Section>
+          </div>
 
-                        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm bottom-nav">
-                            <div className="flex justify-around py-4 px-2">
-                                <button onClick={() => setCurrentPage('home')} className="nav-item flex flex-col items-center text-gray-500">
-                                    <div className="text-2xl mb-1">🏠</div>
-                                    <span className="text-xs font-semibold">Home</span>
-                                </button>
-                                <button className="nav-item active flex flex-col items-center">
-                                    <div className="text-2xl mb-1">🎯</div>
-                                    <span className="text-xs font-semibold">Goals</span>
-                                </button>
-                                <button onClick={() => setCurrentPage('chat')} className="nav-item flex flex-col items-center text-gray-500">
-                                    <div className="text-2xl mb-1">👥</div>
-                                    <span className="text-xs font-semibold">Heroes</span>
-                                </button>
-                                <button onClick={() => setCurrentPage('profile')} className="nav-item flex flex-col items-center text-gray-500">
-                                    <div className="text-2xl mb-1">👤</div>
-                                    <span className="text-xs font-semibold">Profile</span>
-                                </button>
-                            </div>
-                        </div>
+          <Section className="py-6 space-y-6 pb-28">
+            <Card className="p-5">
+              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span>📊</span> Today's Progress</h3>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Stat label="Goals Complete" value={`${todayGoals.filter(g => g.completed).length}/${todayGoals.length}`} />
+                <Stat label="XP Earned" value={todayGoals.filter(g=>g.completed).reduce((s,g)=>s+g.xp,0)} />
+              </div>
+            </Card>
+
+            <div className="space-y-3">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><span>🎯</span> All Missions</h3>
+              {todayGoals.map(goal => (
+                <Card key={goal.id} className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{goal.icon}</span>
+                      <div>
+                        <div className={`text-base font-bold ${goal.completed ? 'line-through text-slate-500' : 'text-slate-800'}`}>{goal.title}</div>
+                        <p className="text-xs text-slate-600 mt-0.5">{goal.completed ? 'Completed today! Great job!' : `Complete to earn ${goal.xp} XP`}</p>
+                      </div>
                     </div>
-                );
-            }
+                    <button onClick={() => completeGoal(goal.id)} disabled={goal.completed} className={`px-5 py-2 rounded-lg font-bold text-sm ${goal.completed ? 'bg-emerald-600 text-white' : 'bg-accent-600 hover:bg-accent-500 text-white'}`}>{goal.completed ? '✓ Done' : 'Complete'}</button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </Section>
 
-            // Chat Page
-            if (currentPage === 'chat') {
-                return (
-                    <div className="app-container">
-                        <Notification />
-                        
-                        <div className="rene-gradient p-8 text-white floating-header">
-                            <div className="flex items-center space-x-4 mb-4">
-                                <button onClick={() => setCurrentPage('home')} className="text-3xl hover:scale-110 transition-transform">
-                                    ←
-                                </button>
-                                <ReneBrand size="medium" />
-                                <span className="font-bold text-xl text-shadow">Hero Alliance</span>
-                            </div>
-                            
-                            <div className="glass-card p-4 rounded-2xl">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm font-bold text-gray-700 flex items-center">
-                                        <span className="mr-2 text-lg">🌟</span>
-                                        Heroes Online
-                                    </span>
-                                    <div className="flex items-center space-x-2">
-                                        <span className="status-indicator status-online"></span>
-                                        <span className="text-xs font-bold text-green-600">4 active now</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-screen-lg bottom-nav">
+            <div className="mx-auto max-w-[1000px]">
+              <div className="grid grid-cols-4 gap-2 px-4 py-3">
+                <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
+                <button className="flex flex-col items-center rounded-lg py-1 text-accent-600 bg-accent-50 font-semibold"><div className="text-xl">🎯</div><span className="text-[11px]">Goals</span></button>
+                <button onClick={() => setCurrentPage('chat')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👥</div><span className="text-[11px] font-medium">Heroes</span></button>
+                <button onClick={() => setCurrentPage('profile')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👤</div><span className="text-[11px] font-medium">Profile</span></button>
+              </div>
+            </div>
+          </div>
+        </Shell>
+      );
 
-                        <div className="p-4 space-y-4 overflow-y-auto" style={{minHeight: '400px', paddingBottom: '120px'}}>
-                            {chatMessages.map(message => (
-                                <div key={message.id} className="slide-up">
-                                    <div className="professional-card rounded-2xl p-4">
-                                        <div className="flex space-x-4">
-                                            <div className="w-12 h-12 bg-gradient-to-br from-red-800 to-red-600 rounded-2xl flex items-center justify-center text-white font-bold shadow-lg">
-                                                {message.avatar}
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="font-bold text-gray-800">{message.user}</span>
-                                                    <span className="text-xs text-gray-500 font-medium">{message.time}</span>
-                                                </div>
-                                                <p className="text-gray-700 mb-3 leading-relaxed">{message.message}</p>
-                                                <div className="flex items-center justify-between">
-                                                    <button 
-                                                        onClick={() => likeMessage(message.id)}
-                                                        className="flex items-center space-x-2 text-sm text-gray-500 hover:text-red-600 transition-colors micro-interaction"
-                                                    >
-                                                        <span className="text-lg">❤️</span>
-                                                        <span className="font-medium">{message.likes}</span>
-                                                    </button>
-                                                    <button className="text-sm text-gray-500 hover:text-gray-700 font-medium">
-                                                        Reply
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+      const Chat = () => (
+        <Shell>
+          <Notification />
+          <div className="rene-gradient floating-header">
+            <Section className="py-5 flex items-center gap-3 text-white">
+              <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
+              <ReneBrand size="sm" />
+              <span className="ml-auto text-lg font-bold">Hero Alliance</span>
+            </Section>
+          </div>
 
-                        <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 w-full max-w-sm p-4">
-                            <div className="professional-card rounded-2xl p-4">
-                                <div className="flex space-x-3">
-                                    <input
-                                        type="text"
-                                        value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
-                                        onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                                        placeholder="Send encouragement to fellow heroes..."
-                                        className="flex-1 p-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent font-medium"
-                                    />
-                                    <button
-                                        onClick={sendMessage}
-                                        className="primary-button px-6 py-3 rounded-xl font-bold micro-interaction"
-                                        disabled={!newMessage.trim()}
-                                    >
-                                        Send
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+          <Section className="py-4 space-y-4 pb-28">
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-slate-700 flex items-center gap-2"><span className="text-lg">🌟</span> Heroes Online</span>
+                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500"></span><span className="text-[11px] font-bold text-emerald-600">4 active</span></div>
+              </div>
+            </Card>
 
-                        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm bottom-nav">
-                            <div className="flex justify-around py-4 px-2">
-                                <button onClick={() => setCurrentPage('home')} className="nav-item flex flex-col items-center text-gray-500">
-                                    <div className="text-2xl mb-1">🏠</div>
-                                    <span className="text-xs font-semibold">Home</span>
-                                </button>
-                                <button onClick={() => setCurrentPage('goals')} className="nav-item flex flex-col items-center text-gray-500">
-                                    <div className="text-2xl mb-1">🎯</div>
-                                    <span className="text-xs font-semibold">Goals</span>
-                                </button>
-                                <button className="nav-item active flex flex-col items-center">
-                                    <div className="text-2xl mb-1">👥</div>
-                                    <span className="text-xs font-semibold">Heroes</span>
-                                </button>
-                                <button onClick={() => setCurrentPage('profile')} className="nav-item flex flex-col items-center text-gray-500">
-                                    <div className="text-2xl mb-1">👤</div>
-                                    <span className="text-xs font-semibold">Profile</span>
-                                </button>
-                            </div>
-                        </div>
+            <div className="space-y-3 min-h-[40vh]">
+              {chatMessages.map(m => (
+                <Card key={m.id} className="p-4">
+                  <div className="flex gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-800 to-rose-600 text-white grid place-items-center text-xl">{m.avatar}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1"><span className="font-bold text-slate-800">{m.user}</span><span className="text-[11px] text-slate-500 font-medium">{m.time}</span></div>
+                      <p className="text-slate-700 mb-3 leading-relaxed">{m.message}</p>
+                      <div className="flex items-center justify-between text-sm">
+                        <button onClick={() => setChatMessages(prev => prev.map(x => x.id === m.id ? { ...x, likes: x.likes + 1 } : x))} className="inline-flex items-center gap-2 text-slate-500 hover:text-rose-600"><span>❤️</span><span className="font-medium">{m.likes}</span></button>
+                        <button className="text-slate-500 hover:text-slate-700 font-medium">Reply</button>
+                      </div>
                     </div>
-                );
-            }
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </Section>
 
-            // Profile Page
-            if (currentPage === 'profile') {
-                return (
-                    <div className="app-container">
-                        <Notification />
-                        
-                        <div className="rene-gradient p-8 text-white floating-header">
-                            <div className="flex items-center space-x-4 mb-6">
-                                <button onClick={() => setCurrentPage('home')} className="text-3xl hover:scale-110 transition-transform">
-                                    ←
-                                </button>
-                                <ReneBrand size="medium" />
-                                <span className="font-bold text-xl text-shadow">Profile</span>
-                            </div>
-                            
-                            <div className="text-center">
-                                <div className="w-24 h-24 glass-card rounded-3xl flex items-center justify-center mx-auto mb-4">
-                                    <span className="text-4xl">🦸‍♀️</span>
-                                </div>
-                                <h2 className="text-2xl font-bold text-shadow mb-1">{heroData.name}</h2>
-                                <p className="text-white/90 font-medium">Level {heroData.level} Kidney Health Hero</p>
-                                <p className="text-white/80 text-sm mt-2">{heroData.age} years old • {heroData.location}</p>
-                                <p className="text-white/70 text-sm">Member since {heroData.joinDate}</p>
-                            </div>
-                        </div>
+          <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-screen-lg px-4">
+            <Card className="p-3">
+              <div className="flex gap-3">
+                <input type="text" value={newMessage} onChange={(e)=>setNewMessage(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && sendMessage()} placeholder="Send encouragement to fellow heroes..." className="flex-1 px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-accent-500" />
+                <button onClick={sendMessage} disabled={!newMessage.trim()} className="px-5 py-2 rounded-lg font-bold bg-accent-600 text-white disabled:opacity-60">Send</button>
+              </div>
+            </Card>
+          </div>
 
-                        <div className="p-6 space-y-8 pb-24">
-                            <div className="professional-card rounded-2xl p-6">
-                                <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                                    <span className="mr-3 text-2xl">📊</span>
-                                    Your Stats
-                                </h3>
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="metric-display">
-                                        <div className="text-3xl font-bold text-orange-500 mb-2">{heroData.totalPoints}</div>
-                                        <div className="text-sm text-gray-600 font-medium">Total XP</div>
-                                    </div>
-                                    <div className="metric-display">
-                                        <div className="text-3xl font-bold text-red-600 mb-2">{streakData.bestStreak}</div>
-                                        <div className="text-sm text-gray-600 font-medium">Best Streak</div>
-                                    </div>
-                                    <div className="metric-display">
-                                        <div className="text-3xl font-bold text-blue-500 mb-2">94%</div>
-                                        <div className="text-sm text-gray-600 font-medium">Medication Rate</div>
-                                    </div>
-                                    <div className="metric-display">
-                                        <div className="text-3xl font-bold text-green-500 mb-2">{achievements.filter(a => a.unlocked).length}</div>
-                                        <div className="text-sm text-gray-600 font-medium">Achievements</div>
-                                    </div>
-                                </div>
-                            </div>
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-screen-lg bottom-nav">
+            <div className="mx-auto max-w-[1000px]">
+              <div className="grid grid-cols-4 gap-2 px-4 py-3">
+                <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
+                <button onClick={() => setCurrentPage('goals')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🎯</div><span className="text-[11px] font-medium">Goals</span></button>
+                <button className="flex flex-col items-center rounded-lg py-1 text-accent-600 bg-accent-50 font-semibold"><div className="text-xl">👥</div><span className="text-[11px]">Heroes</span></button>
+                <button onClick={() => setCurrentPage('profile')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👤</div><span className="text-[11px] font-medium">Profile</span></button>
+              </div>
+            </div>
+          </div>
+        </Shell>
+      );
 
-                            <div className="professional-card rounded-2xl p-6">
-                                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                                    <span className="mr-3 text-2xl">💬</span>
-                                    Need Help?
-                                </h3>
-                                <p className="text-gray-600 mb-6 leading-relaxed">
-                                    Our support team is here 24/7 to help with any questions about RENÉ or your kidney health journey.
-                                </p>
-                                <button 
-                                    onClick={() => alert('🆘 Support: "Hello Leandro! How can we help you today? Our team is available 24/7 for any questions about RENÉ or your kidney health journey."')}
-                                    className="primary-button w-full py-4 rounded-xl font-bold micro-interaction"
-                                >
-                                    Contact Support Team
-                                </button>
-                            </div>
-                        </div>
+      const Profile = () => (
+        <Shell>
+          <Notification />
+          <div className="rene-gradient floating-header">
+            <Section className="py-5 flex items-center gap-3 text-white">
+              <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
+              <ReneBrand size="sm" />
+              <span className="ml-auto text-lg font-bold">Profile</span>
+            </Section>
+          </div>
 
-                        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm bottom-nav">
-                            <div className="flex justify-around py-4 px-2">
-                                <button onClick={() => setCurrentPage('home')} className="nav-item flex flex-col items-center text-gray-500">
-                                    <div className="text-2xl mb-1">🏠</div>
-                                    <span className="text-xs font-semibold">Home</span>
-                                </button>
-                                <button onClick={() => setCurrentPage('goals')} className="nav-item flex flex-col items-center text-gray-500">
-                                    <div className="text-2xl mb-1">🎯</div>
-                                    <span className="text-xs font-semibold">Goals</span>
-                                </button>
-                                <button onClick={() => setCurrentPage('chat')} className="nav-item flex flex-col items-center text-gray-500">
-                                    <div className="text-2xl mb-1">👥</div>
-                                    <span className="text-xs font-semibold">Heroes</span>
-                                </button>
-                                <button className="nav-item active flex flex-col items-center">
-                                    <div className="text-2xl mb-1">👤</div>
-                                    <span className="text-xs font-semibold">Profile</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
+          <Section className="py-6 space-y-6 pb-28">
+            <div className="text-center">
+              <div className="w-24 h-24 mx-auto rounded-2xl grid place-items-center bg-white/90 border border-white shadow-soft text-4xl">🦸‍♀️</div>
+              <h2 className="text-2xl font-extrabold text-slate-800 mt-3">{heroData.name}</h2>
+              <p className="text-slate-600 text-sm">Level {heroData.level} Kidney Health Hero</p>
+              <p className="text-slate-500 text-xs">{heroData.age} • {heroData.location} • since {heroData.joinDate}</p>
+            </div>
 
-            // Achievements Page
-            if (currentPage === 'achievements') {
-                return (
-                    <div className="app-container">
-                        <Notification />
-                        
-                        <div className="rene-gradient p-8 text-white floating-header">
-                            <div className="flex items-center space-x-4 mb-4">
-                                <button onClick={() => setCurrentPage('home')} className="text-3xl hover:scale-110 transition-transform">
-                                    ←
-                                </button>
-                                <ReneBrand size="medium" />
-                                <span className="font-bold text-xl text-shadow">Achievements</span>
-                            </div>
-                        </div>
+            <Card className="p-5">
+              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span>📊</span> Your Stats</h3>
+              <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <Stat label="Total XP" value={heroData.totalPoints} />
+                <Stat label="Best Streak" value={streakData.bestStreak} />
+                <Stat label="Medication Rate" value={'94%'} />
+                <Stat label="Achievements" value={achievements.filter(a => a.unlocked).length} />
+              </div>
+            </Card>
 
-                        <div className="p-6 space-y-8 pb-24">
-                            <div className="text-center">
-                                <h2 className="text-3xl font-bold text-gray-800 mb-3">🏆 Your Trophies</h2>
-                                <p className="text-gray-600 text-lg">
-                                    <span className="font-bold text-orange-500">{achievements.filter(a => a.unlocked).length}</span> of {achievements.length} unlocked
-                                </p>
-                            </div>
+            <Card className="p-5">
+              <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2"><span>💬</span> Need Help?</h3>
+              <p className="text-slate-600 text-sm mb-4">Our support team is here 24/7 to help with any questions about RENÉ or your kidney health journey.</p>
+              <button onClick={() => alert('Support is here.')} className="w-full px-5 py-3 rounded-lg font-bold bg-accent-600 hover:bg-accent-500 text-white">Contact Support Team</button>
+            </Card>
+          </Section>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                {achievements.map(achievement => (
-                                    <div 
-                                        key={achievement.id}
-                                        className={`achievement-card p-6 rounded-3xl border-2 text-center ${
-                                            achievement.unlocked 
-                                                ? 'unlocked' 
-                                                : 'professional-card'
-                                        }`}
-                                    >
-                                        <div className={`text-5xl mb-4 ${!achievement.unlocked && 'grayscale opacity-50'}`}>
-                                            {achievement.icon}
-                                        </div>
-                                        <h3 className={`font-bold text-lg mb-2 ${
-                                            achievement.unlocked ? 'text-orange-900' : 'text-gray-500'
-                                        }`}>
-                                            {achievement.title}
-                                        </h3>
-                                        <p className={`text-sm leading-relaxed ${
-                                            achievement.unlocked ? 'text-orange-700' : 'text-gray-400'
-                                        }`}>
-                                            {achievement.description}
-                                        </p>
-                                        {achievement.unlocked && (
-                                            <div className="mt-4">
-                                                <span className="bg-yellow-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
-                                                    ✨ Unlocked!
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-screen-lg bottom-nav">
+            <div className="mx-auto max-w-[1000px]">
+              <div className="grid grid-cols-4 gap-2 px-4 py-3">
+                <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
+                <button onClick={() => setCurrentPage('goals')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🎯</div><span className="text-[11px] font-medium">Goals</span></button>
+                <button onClick={() => setCurrentPage('chat')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👥</div><span className="text-[11px] font-medium">Heroes</span></button>
+                <button className="flex flex-col items-center rounded-lg py-1 text-accent-600 bg-accent-50 font-semibold"><div className="text-xl">👤</div><span className="text-[11px]">Profile</span></button>
+              </div>
+            </div>
+          </div>
+        </Shell>
+      );
 
-                        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm bottom-nav">
-                            <div className="flex justify-around py-4 px-2">
-                                <button onClick={() => setCurrentPage('home')} className="nav-item flex flex-col items-center text-gray-500">
-                                    <div className="text-2xl mb-1">🏠</div>
-                                    <span className="text-xs font-semibold">Home</span>
-                                </button>
-                                <button onClick={() => setCurrentPage('goals')} className="nav-item flex flex-col items-center text-gray-500">
-                                    <div className="text-2xl mb-1">🎯</div>
-                                    <span className="text-xs font-semibold">Goals</span>
-                                </button>
-                                <button onClick={() => setCurrentPage('chat')} className="nav-item flex flex-col items-center text-gray-500">
-                                    <div className="text-2xl mb-1">👥</div>
-                                    <span className="text-xs font-semibold">Heroes</span>
-                                </button>
-                                <button onClick={() => setCurrentPage('profile')} className="nav-item flex flex-col items-center text-gray-500">
-                                    <div className="text-2xl mb-1">👤</div>
-                                    <span className="text-xs font-semibold">Profile</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
+      // Router
+      const Page = () => {
+        switch (currentPage) {
+          case 'home': return <Home/>;
+          case 'goals': return <Goals/>;
+          case 'chat': return <Chat/>;
+          case 'profile': return <Profile/>;
+          case 'achievements': return <Home/>; // (optional) implement separately
+          default: return <Home/>;
+        }
+      };
 
-            return <div>Loading...</div>;
-        };
+      return <Page/>;
+    };
 
-        // Render the app
-        ReactDOM.render(React.createElement(App), document.getElementById('root'));
-    </script>
+    ReactDOM.render(React.createElement(App), document.getElementById('root'));
+  </script>
 </body>
 </html>
