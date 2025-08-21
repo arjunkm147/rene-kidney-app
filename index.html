@@ -23,8 +23,7 @@
               50: '#fff4f2', 100: '#fee6e2', 200: '#f8cdc7', 300: '#efaaa1', 400: '#e0877d',
               500: '#c86e64', 600: '#a75954', 700: '#8d4946', 800: '#6f3b39', 900: '#5a3230'
             },
-            accent: { 50: '#fff7ed', 100: '#ffedd5', 500: '#f97316', 600: '#ea580c' },
-            good: '#10b981'
+            accent: { 50: '#fff7ed', 100: '#ffedd5', 500: '#f97316', 600: '#ea580c' }
           },
           fontFamily: {
             sans: [
@@ -53,26 +52,33 @@
   <!-- Fonts & base styles -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    :root { --bg-grad-start:#f8fafc; --bg-grad-end:#e2e8f0; }
+    :root {
+      --bg-grad-start: #f8fafc; /* slate-50 */
+      --bg-grad-end: #e2e8f0;   /* slate-200 */
+    }
     html, body { height: 100%; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
       background: linear-gradient(135deg, var(--bg-grad-start) 0%, var(--bg-grad-end) 100%);
-      margin: 0; line-height: 1.55; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+      margin: 0;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     .rene-gradient { background: linear-gradient(135deg, #8b5a5a 0%, #a0706e 25%, #b8857f 50%, #d4a574 100%); }
-    .card { background:#fff; border:1px solid #e2e8f0; border-radius:1rem; box-shadow:0 6px 24px rgba(15,23,42,.06); }
-    .card-hover { transition:box-shadow .2s, transform .2s, border-color .2s; }
-    .card-hover:hover { transform:translateY(-2px); box-shadow:0 10px 30px rgba(15,23,42,.10); border-color:#cbd5e1; }
-    .progress-track{height:6px;background:#e2e8f0;border-radius:999px;overflow:hidden}
-    .progress-fill{height:100%;background:linear-gradient(90deg,#10b981 0%,#059669 100%);border-radius:999px;transition:width .4s cubic-bezier(.16,1,.3,1)}
-    .floating-header{position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);border-bottom:1px solid rgba(226,232,240,.9)}
-    .bottom-nav{background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-top:1px solid #e2e8f0;box-shadow:0 -6px 24px rgba(15,23,42,.06)}
-    .app-shell{max-width:100%}
-    @media (min-width:640px){.app-shell{max-width:480px}}
-    @media (min-width:768px){.app-shell{max-width:800px}}
-    @media (min-width:1024px){.app-shell{max-width:1000px}}
-    .notification{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:1000;max-width:520px}
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 6px 24px rgba(15,23,42,0.06); }
+    .card-hover { transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(15,23,42,0.1); border-color: #cbd5e1; }
+    .progress-track { height: 6px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); border-radius: 999px; transition: width .4s cubic-bezier(.16,1,.3,1); }
+    .floating-header { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); border-bottom: 1px solid rgba(226,232,240,.9); }
+    .bottom-nav { background: rgba(255,255,255,.95); backdrop-filter: blur(10px); border-top: 1px solid #e2e8f0; box-shadow: 0 -6px 24px rgba(15,23,42,.06); }
+    .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; max-width: 520px; }
+    .app-shell { max-width: 100%; }
+    @media (min-width: 640px) { .app-shell { max-width: 480px; } }
+    @media (min-width: 768px) { .app-shell { max-width: 800px; } }
+    @media (min-width: 1024px) { .app-shell { max-width: 1000px; } }
+    @media (prefers-reduced-motion: reduce) { * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; } }
   </style>
 </head>
 <body>
@@ -90,116 +96,115 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // Shell & tokens
+    // Reusable building blocks
     const Shell = ({ children }) => (
       <div className="app-shell container mx-auto min-h-screen bg-white md:rounded-2xl md:shadow-card md:border md:border-slate-200 relative">
         {children}
       </div>
     );
-    const Section = ({ children, className = '' }) => (<div className={`px-5 sm:px-6 md:px-8 ${className}`}>{children}</div>);
-    const Card = ({ children, className = '' }) => (<div className={`card card-hover ${className}`}>{children}</div>);
+    const Section = ({ children, className = '' }) => <div className={`px-5 sm:px-6 md:px-8 ${className}`}>{children}</div>;
+    const Card = ({ children, className = '', ...rest }) => <div className={`card card-hover ${className}`} {...rest}>{children}</div>;
 
-    // Stat supports onGradient variant so it doesn't look washed out
+    // Stat supports contrast-aware variant for gradient surfaces
     const Stat = ({ label, value, sub, className = '', variant = 'default' }) => {
-      const isGradient = variant === 'onGradient';
+      const onGrad = variant === 'onGradient';
       return (
-        <div className={`rounded-xl text-center p-4 ${isGradient ? 'bg-white/10 border border-white/20 text-white' : 'bg-slate-50 border border-slate-200 text-slate-900'} ${className}`}>
-          <div className={`text-2xl font-bold mb-1 ${isGradient ? 'text-white' : 'text-slate-900'}`}>{value}</div>
-          <div className={`text-xs font-medium ${isGradient ? 'text-white/90' : 'text-slate-600'}`}>{label}</div>
-          {sub && <div className={`text-[11px] mt-1 ${isGradient ? 'text-white/80' : 'text-slate-500'}`}>{sub}</div>}
+        <div className={`rounded-xl text-center p-4 ${onGrad ? 'bg-white/10 border border-white/20 text-white' : 'bg-slate-50 border border-slate-200 text-slate-900'} ${className}`}>
+          <div className={`text-2xl font-bold mb-1 ${onGrad ? 'text-white' : 'text-slate-900'}`}>{value}</div>
+          <div className={`text-xs font-medium ${onGrad ? 'text-white/90' : 'text-slate-600'}`}>{label}</div>
+          {sub && <div className={`text-[11px] mt-1 ${onGrad ? 'text-white/80' : 'text-slate-500'}`}>{sub}</div>}
         </div>
       );
     };
-
-    const ReneBrand = ({ size = 'md' }) => {
-      const sizes = { sm: ['w-8 h-8', 'text-lg'], md: ['w-12 h-12', 'text-2xl'], lg: ['w-16 h-16', 'text-3xl'] };
-      const [img, txt] = sizes[size] || sizes.md;
-      return (
-        <div className="inline-flex items-center gap-3 select-none">
-          <img src="rene-logo-new.png" alt="RENÉ" className={`${img} object-contain drop-shadow`} />
-          <span className={`font-extrabold text-white ${txt}`}>RENÉ</span>
-        </div>
-      );
-    };
-
-    const Notification = ({ notice }) => notice && (
-      <div className={`notification px-5 py-3 rounded-xl shadow-card text-white ${notice.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'}`}>
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <span>{notice.type === 'success' ? '✅' : '⚠️'}</span>
-          <span>{notice.message}</span>
-        </div>
-      </div>
-    );
 
     const App = () => {
       const [currentPage, setCurrentPage] = useState('home');
-      const [notice, setNotice] = useState(null);
+      const [notification, setNotification] = useState(null);
 
-      const [heroData, setHeroData] = useState({
-        name: 'Leandro', age: 15, location: 'Lausanne', level: 8, xp: 1840, xpToNext: 2000, totalPoints: 15420, joinDate: 'March 2024'
-      });
+      // Demo: dialysis session interval (set to 1 min for demo; change to 30*60*1000 for production)
+      const demoIntervalMs = 60000;
+      const dialysisTimerRef = useRef(null);
+      const [dialysisActive, setDialysisActive] = useState(false);
 
-      const [streakData, setStreakData] = useState({
-        currentStreak: 5, bestStreak: 7, medicationTaken: true, medicationTime: '08:30 AM',
-        fluidIntake: 1400, fluidTarget: 2000, stepCount: 6200, stepTarget: 8000,
-        intensityMinutes: 36, intensityTarget: 150, sleepHours: 7.5, moodRating: 4
-      });
+      const heroData = { name: 'Leandro', age: 15, location: 'Lausanne', level: 8, xp: 1840, xpToNext: 2000, totalPoints: 15420, joinDate: 'March 2024' };
 
       const [todayGoals, setTodayGoals] = useState([
         { id: 1, title: 'Morning Medication', completed: true, xp: 50, icon: '💊' },
-        { id: 2, title: 'Hydration Target (≤ 2L)', completed: false, xp: 30, icon: '💧' },
+        { id: 2, title: 'Hydration Goals (≤ 1L)', completed: false, xp: 30, icon: '💧' },
         { id: 3, title: 'Walk 8000 steps', completed: false, xp: 40, icon: '👟' },
         { id: 4, title: 'Evening Medication', completed: false, xp: 50, icon: '💊' },
         { id: 5, title: 'Mood Check-in', completed: false, xp: 20, icon: '😊' }
       ]);
 
       const [chatMessages, setChatMessages] = useState([
-        { id: 1, user: 'Sofia', message: 'Completed 7-day streak 🎉', time: '5m', likes: 12, avatar: '🦸‍♀️' },
-        { id: 2, user: 'Marcus', message: 'Intensity minutes up to 120 this week!', time: '18m', likes: 6, avatar: '🦸‍♂️' },
+        { id: 1, user: 'Sofia',  message: 'Just completed my 7-day streak! 🎉', time: '5m',  likes: 12, avatar: '🦸‍♀️' },
+        { id: 2, user: 'Marcus', message: 'Anyone tried the new meditation module?', time: '12m', likes: 3,  avatar: '🦸‍♂️' },
+        { id: 3, user: 'Emma',   message: 'Small steps every day! 💪',        time: '25m', likes: 8,  avatar: '🦸' }
       ]);
       const [newMessage, setNewMessage] = useState('');
 
-      // Dialysis session mock notifications
-      const [dialysisActive, setDialysisActive] = useState(false);
-      const dialysisTimerRef = useRef(null);
-
-      const notify = (message, type = 'success', timeout = 2500) => {
-        setNotice({ message, type });
-        if (timeout) setTimeout(() => setNotice(null), timeout);
+      const streakData = {
+        currentStreak: 5, bestStreak: 7, medicationTaken: true, medicationTime: '08:30',
+        fluidIntake: 1400, fluidTarget: 2000, stepCount: 6200, stepTarget: 8000,
+        intensityMinutes: 36, intensityTarget: 150
       };
 
+      const notify = (message, type = 'success') => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification(null), 2500);
+      };
+
+      const ReneBrand = ({ size = 'md' }) => {
+        const m = { sm: ['w-8 h-8', 'text-lg'], md: ['w-12 h-12', 'text-2xl'], lg: ['w-16 h-16', 'text-3xl'] };
+        const [img, txt] = m[size] || m.md;
+        return (
+          <div className="inline-flex items-center gap-3 select-none">
+            <img src="rene-logo-new.png" alt="RENÉ" className={`${img} object-contain drop-shadow`} />
+            <span className={`font-extrabold text-white ${txt}`}>RENÉ</span>
+          </div>
+        );
+      };
+
+      const Notification = () => notification && (
+        <div className={`notification px-5 py-3 rounded-xl shadow-card text-white ${notification.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <span>{notification.type === 'success' ? '✅' : '⚠️'}</span>
+            <span>{notification.message}</span>
+          </div>
+        </div>
+      );
+
+      // --- Dialysis session timer demo ---
+      useEffect(() => {
+        if (dialysisActive) {
+          dialysisTimerRef.current = setInterval(() => {
+            alert('📝 Quick check-in: How are you feeling? (Demo prompt)');
+          }, demoIntervalMs);
+        } else if (dialysisTimerRef.current) {
+          clearInterval(dialysisTimerRef.current);
+          dialysisTimerRef.current = null;
+        }
+        return () => { if (dialysisTimerRef.current) clearInterval(dialysisTimerRef.current); };
+      }, [dialysisActive]);
+
+      // --- Actions ---
       const completeGoal = (id) => {
-        setTodayGoals(gs => gs.map(g => g.id === id ? { ...g, completed: true } : g));
-        const g = todayGoals.find(x => x.id === id);
-        if (g && !g.completed) { setHeroData(h => ({ ...h, xp: h.xp + g.xp })); notify(`+${g.xp} XP • ${g.title}`); }
+        setTodayGoals(prev => prev.map(g => g.id === id ? { ...g, completed: true } : g));
+        const goal = todayGoals.find(g => g.id === id);
+        if (goal && !goal.completed) notify(`+${goal.xp} XP • ${goal.title}`);
       };
-
       const sendMessage = () => {
         if (!newMessage.trim()) return;
-        setChatMessages(ms => [{ id: ms.length + 1, user: heroData.name, message: newMessage, time: 'now', likes: 0, avatar: '🦸' }, ...ms]);
+        const msg = { id: chatMessages.length + 1, user: heroData.name, message: newMessage, time: 'now', likes: 0, avatar: '🦸‍♀️' };
+        setChatMessages(prev => [msg, ...prev]);
         setNewMessage('');
         notify('Message sent');
       };
 
-      const startDialysis = () => {
-        if (dialysisActive) return;
-        setDialysisActive(true);
-        notify('Dialysis session started. You will get periodic check-ins.', 'success', 3000);
-        dialysisTimerRef.current = setInterval(() => {
-          notify('How are you feeling? Tap to log symptoms.', 'success', 4000);
-        }, 60000);
-      };
-      const stopDialysis = () => {
-        setDialysisActive(false);
-        if (dialysisTimerRef.current) { clearInterval(dialysisTimerRef.current); dialysisTimerRef.current = null; }
-        notify('Session ended', 'success');
-      };
-      useEffect(() => () => { if (dialysisTimerRef.current) clearInterval(dialysisTimerRef.current); }, []);
-
-      // ---------- Pages ----------
+      // --- Pages ---
       const Home = () => (
         <Shell>
-          <Notification notice={notice} />
+          <Notification />
           <div className="rene-gradient floating-header">
             <Section className="py-6">
               <div className="flex items-center justify-between">
@@ -211,7 +216,6 @@
                 </div>
               </div>
 
-              {/* XP strip */}
               <Card className="mt-5 p-5">
                 <div className="flex items-start justify-between">
                   <div>
@@ -224,7 +228,7 @@
                   </div>
                 </div>
                 <div className="progress-track mt-3">
-                  <div className="progress-fill" style={{ width: `${(heroData.xp / heroData.xpToNext) * 100}%` }} />
+                  <div className="progress-fill" style={{ width: `${(heroData.xp / heroData.xpToNext) * 100}%` }}></div>
                 </div>
                 <div className="text-[11px] text-slate-600 font-medium mt-1.5">
                   {heroData.xpToNext - heroData.xp} XP to Level {heroData.level + 1}
@@ -234,7 +238,16 @@
           </div>
 
           <Section className="py-6 space-y-8 pb-28">
-            {/* Streak card with solid-on-gradient stats */}
+            {/* Chat CTA */}
+            <div className="space-y-3">
+              <h3 className="text-base sm:text-lg font-semibold text-slate-800">💬 How are you feeling today?</h3>
+              <button onClick={() => alert('RENÉ: How are you feeling today?')}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-5 py-4 font-semibold text-white bg-gradient-to-tr from-accent-500 to-accent-600 shadow-soft hover:shadow-card transition">
+                <span className="text-xl">🤖</span><span>Chat with RENÉ</span>
+              </button>
+            </div>
+
+            {/* Streak Card - strong contrast on gradient */}
             <div className="rounded-2xl p-6 text-white shadow-card bg-gradient-to-tr from-orange-500 via-orange-400 to-amber-400">
               <div className="flex items-start justify-between">
                 <div>
@@ -246,19 +259,55 @@
 
               <div className="mt-5 grid grid-cols-7 gap-2">
                 {[...Array(7)].map((_, i) => (
-                  <div key={i} className={`${i < streakData.currentStreak ? 'bg-white' : 'bg-white/40'} h-3 rounded-full`} />
+                  <div key={i} className={`h-3 rounded-full ${i < streakData.currentStreak ? 'bg-white' : 'bg-white/40'}`}></div>
                 ))}
               </div>
 
               <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <Stat variant="onGradient" label="Medicine" value={streakData.medicationTaken ? '✓' : '○'} />
-                <Stat variant="onGradient" label="Hydration Target" value={`${Math.round((streakData.fluidIntake / streakData.fluidTarget) * 100)}%`} sub={`${streakData.fluidIntake} / ${streakData.fluidTarget} ml`} />
-                <Stat variant="onGradient" label="Steps" value={`${(streakData.stepCount/1000).toFixed(1)}k`} sub={`Target ${Math.round(streakData.stepTarget/1000)}k`} />
-                <Stat variant="onGradient" label="Intensity min" value={`${streakData.intensityMinutes}m`} sub={`/ ${streakData.intensityTarget} weekly`} />
+                <Stat variant="onGradient" label="Hydration Goals"
+                      value={`${Math.round((streakData.fluidIntake / streakData.fluidTarget) * 100)}%`}
+                      sub={`${streakData.fluidIntake} / ${streakData.fluidTarget} ml`} />
+                <Stat variant="onGradient" label="Steps"
+                      value={`${(streakData.stepCount / 1000).toFixed(1)}k`}
+                      sub={`Target ${Math.round(streakData.stepTarget / 1000)}k`} />
+                <Stat variant="onGradient" label="Intensity min"
+                      value={`${streakData.intensityMinutes}m`}
+                      sub={`/ ${streakData.intensityTarget} weekly`} />
               </div>
             </div>
 
-            {/* Quick Access modules */}
+            {/* Goals preview */}
+            <Card className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><span>🎯</span> Today's Missions</h3>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-50 border text-xs font-bold text-slate-700">
+                  {todayGoals.filter(g => g.completed).length}/{todayGoals.length}
+                </span>
+              </div>
+              <div className="space-y-3">
+                {todayGoals.slice(0,3).map(goal => (
+                  <div key={goal.id} className="card-hover border rounded-xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{goal.icon}</span>
+                      <div>
+                        <div className={`font-semibold ${goal.completed ? 'line-through text-slate-500' : 'text-slate-800'}`}>{goal.title}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">{goal.completed ? 'Completed today' : `Earn ${goal.xp} XP`}</div>
+                      </div>
+                    </div>
+                    <button onClick={() => completeGoal(goal.id)} disabled={goal.completed}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${goal.completed ? 'bg-emerald-600 text-white' : 'bg-accent-600 hover:bg-accent-500 text-white'}`}>
+                      {goal.completed ? '✓ Done' : 'Complete'}
+                    </button>
+                  </div>
+                ))}
+                <button onClick={() => setCurrentPage('goals')} className="w-full text-accent-600 font-semibold py-2 rounded-lg hover:bg-accent-50">
+                  View all goals →
+                </button>
+              </div>
+            </Card>
+
+            {/* Modules */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="p-5 cursor-pointer" onClick={() => setCurrentPage('goals')}>
                 <div className="text-3xl mb-2">⚙️</div>
@@ -269,7 +318,10 @@
                 <div className="text-3xl mb-2">👥</div>
                 <div className="font-bold text-slate-800">Hero Alliance</div>
                 <div className="text-sm text-slate-600">Challenges & leaderboard</div>
-                <div className="flex items-center gap-2 mt-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span><span className="text-[11px] font-semibold text-emerald-600">4 online</span></div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span className="text-[11px] font-semibold text-emerald-600">4 online</span>
+                </div>
               </Card>
               <Card className="p-5 cursor-pointer" onClick={() => setCurrentPage('wellness')}>
                 <div className="text-3xl mb-2">🧘</div>
@@ -294,8 +346,8 @@
             </div>
           </Section>
 
-          <!-- Bottom nav (safe-area aware, no transforms) -->
-          <div className="fixed inset-x-0 bottom-0 z-40 bottom-nav" style="padding-bottom: env(safe-area-inset-bottom)">
+          {/* Bottom nav */}
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-screen-lg bottom-nav">
             <div className="mx-auto max-w-[1000px]">
               <div className="grid grid-cols-4 gap-2 px-4 py-3">
                 <button className="flex flex-col items-center rounded-lg py-1 text-accent-600 bg-accent-50 font-semibold"><div className="text-xl">🏠</div><span className="text-[11px]">Home</span></button>
@@ -310,7 +362,7 @@
 
       const Goals = () => (
         <Shell>
-          <Notification notice={notice} />
+          <Notification />
           <div className="rene-gradient floating-header">
             <Section className="py-5 flex items-center gap-3 text-white">
               <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
@@ -340,14 +392,17 @@
                         <p className="text-xs text-slate-600 mt-0.5">{goal.completed ? 'Completed today! Great job!' : `Complete to earn ${goal.xp} XP`}</p>
                       </div>
                     </div>
-                    <button onClick={() => completeGoal(goal.id)} disabled={goal.completed} className={`px-5 py-2 rounded-lg font-bold text-sm ${goal.completed ? 'bg-emerald-600 text-white' : 'bg-accent-600 hover:bg-accent-500 text-white'}`}>{goal.completed ? '✓ Done' : 'Complete'}</button>
+                    <button onClick={() => completeGoal(goal.id)} disabled={goal.completed}
+                            className={`px-5 py-2 rounded-lg font-bold text-sm ${goal.completed ? 'bg-emerald-600 text-white' : 'bg-accent-600 hover:bg-accent-500 text-white'}`}>
+                      {goal.completed ? '✓ Done' : 'Complete'}
+                    </button>
                   </div>
                 </Card>
               ))}
             </div>
           </Section>
 
-          <div className="fixed inset-x-0 bottom-0 z-40 bottom-nav" style="padding-bottom: env(safe-area-inset-bottom)">
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-screen-lg bottom-nav">
             <div className="mx-auto max-w-[1000px]">
               <div className="grid grid-cols-4 gap-2 px-4 py-3">
                 <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
@@ -362,7 +417,7 @@
 
       const Chat = () => (
         <Shell>
-          <Notification notice={notice} />
+          <Notification />
           <div className="rene-gradient floating-header">
             <Section className="py-5 flex items-center gap-3 text-white">
               <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
@@ -371,8 +426,7 @@
             </Section>
           </div>
 
-          {/* Extra bottom padding so list never hides behind composer + nav */}
-          <Section className="py-4 space-y-4 pb-44">
+          <Section className="py-4 space-y-4 pb-28">
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-bold text-slate-700 flex items-center gap-2"><span className="text-lg">🌟</span> Heroes Online</span>
@@ -384,7 +438,7 @@
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-slate-800 font-bold">Challenges</h3>
-                <button className="text-sm px-3 py-1 rounded-lg bg-accent-600 text-white" onClick={() => notify('Challenge created')}>New</button>
+                <button className="text-sm px-3 py-1 rounded-lg bg-accent-600 text-white" onClick={() => alert('Create a challenge')}>New</button>
               </div>
               <div className="grid sm:grid-cols-2 gap-3">
                 <div className="border rounded-lg p-3 flex items-center justify-between">
@@ -392,14 +446,14 @@
                     <div className="font-semibold">Hydration target 3-day streak</div>
                     <div className="text-xs text-slate-500">You vs. Sofia</div>
                   </div>
-                  <button className="text-sm px-3 py-1 rounded bg-slate-100" onClick={() => notify('Challenge sent!')}>Challenge</button>
+                  <button className="text-sm px-3 py-1 rounded bg-slate-100" onClick={() => alert('Challenge sent!')}>Challenge</button>
                 </div>
                 <div className="border rounded-lg p-3 flex items-center justify-between">
                   <div>
                     <div className="font-semibold">Intensity minutes 100/week</div>
                     <div className="text-xs text-slate-500">Open challenge</div>
                   </div>
-                  <button className="text-sm px-3 py-1 rounded bg-slate-100" onClick={() => notify('Joined challenge')}>Join</button>
+                  <button className="text-sm px-3 py-1 rounded bg-slate-100" onClick={() => alert('Joined!')}>Join</button>
                 </div>
               </div>
             </Card>
@@ -420,18 +474,23 @@
               </div>
             </Card>
 
-            {/* Chat feed */}
             <div className="space-y-3 min-h-[30vh]">
               {chatMessages.map(m => (
                 <Card key={m.id} className="p-4">
                   <div className="flex gap-4">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-800 to-rose-600 text-white grid place-items-center text-xl">{m.avatar}</div>
                     <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1"><span className="font-bold text-slate-800">{m.user}</span><span className="text-[11px] text-slate-500 font-medium">{m.time}</span></div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-slate-800">{m.user}</span>
+                        <span className="text-[11px] text-slate-500 font-medium">{m.time}</span>
+                      </div>
                       <p className="text-slate-700 mb-3 leading-relaxed">{m.message}</p>
                       <div className="flex items-center justify-between text-sm">
-                        <button onClick={() => setChatMessages(prev => prev.map(x => x.id === m.id ? { ...x, likes: x.likes + 1 } : x))} className="inline-flex items-center gap-2 text-slate-500 hover:text-rose-600" style="touch-action: manipulation;"><span>❤️</span><span className="font-medium">{m.likes}</span></button>
-                        <button className="text-slate-500 hover:text-slate-700 font-medium" style="touch-action: manipulation;">Reply</button>
+                        <button onClick={() => setChatMessages(prev => prev.map(x => x.id === m.id ? { ...x, likes: x.likes + 1 } : x))}
+                                className="inline-flex items-center gap-2 text-slate-500 hover:text-rose-600">
+                          <span>❤️</span><span className="font-medium">{m.likes}</span>
+                        </button>
+                        <button className="text-slate-500 hover:text-slate-700 font-medium">Reply</button>
                       </div>
                     </div>
                   </div>
@@ -440,47 +499,26 @@
             </div>
           </Section>
 
-          <!-- Composer: fixed, safe-area aware, above nav -->
-          <div className="fixed inset-x-0 z-50" style="bottom: calc(56px + env(safe-area-inset-bottom))">
-            <div className="mx-auto max-w-[1000px] px-4">
-              <Card className="p-3">
-                <form
-                  onSubmit={(e)=>{ e.preventDefault(); sendMessage(); }}
-                  className="flex gap-3"
-                >
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e)=>setNewMessage(e.target.value)}
-                    placeholder="Send encouragement to fellow heroes..."
-                    className="flex-1 px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-accent-500"
-                    inputMode="text"
-                    enterKeyHint="send"
-                    autoComplete="off"
-                    aria-label="Type your message"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!newMessage.trim()}
-                    className="px-5 py-2 rounded-lg font-bold bg-accent-600 text-white disabled:opacity-60"
-                    style="touch-action: manipulation;"
-                    aria-label="Send message"
-                  >
-                    Send
-                  </button>
-                </form>
-              </Card>
-            </div>
+          <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-screen-lg px-4">
+            <Card className="p-3">
+              <div className="flex gap-3">
+                <input type="text" value={newMessage} onChange={(e)=>setNewMessage(e.target.value)}
+                       onKeyDown={(e)=>e.key==='Enter' && sendMessage()}
+                       placeholder="Send encouragement to fellow heroes..."
+                       className="flex-1 px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-accent-500" />
+                <button onClick={sendMessage} disabled={!newMessage.trim()}
+                        className="px-5 py-2 rounded-lg font-bold bg-accent-600 text-white disabled:opacity-60">Send</button>
+              </div>
+            </Card>
           </div>
 
-          <!-- Bottom nav (safe-area aware, z-40) -->
-          <div className="fixed inset-x-0 bottom-0 z-40 bottom-nav" style="padding-bottom: env(safe-area-inset-bottom)">
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-screen-lg bottom-nav">
             <div className="mx-auto max-w-[1000px]">
               <div className="grid grid-cols-4 gap-2 px-4 py-3">
-                <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50" style="touch-action: manipulation;"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
-                <button onClick={() => setCurrentPage('goals')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50" style="touch-action: manipulation;"><div className="text-xl">🎯</div><span className="text-[11px] font-medium">Goals</span></button>
-                <button className="flex flex-col items-center rounded-lg py-1 text-accent-600 bg-accent-50 font-semibold" style="touch-action: manipulation;"><div className="text-xl">👥</div><span className="text-[11px]">Heroes</span></button>
-                <button onClick={() => setCurrentPage('profile')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50" style="touch-action: manipulation;"><div className="text-xl">👤</div><span className="text-[11px] font-medium">Profile</span></button>
+                <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
+                <button onClick={() => setCurrentPage('goals')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🎯</div><span className="text-[11px] font-medium">Goals</span></button>
+                <button className="flex flex-col items-center rounded-lg py-1 text-accent-600 bg-accent-50 font-semibold"><div className="text-xl">👥</div><span className="text-[11px]">Heroes</span></button>
+                <button onClick={() => setCurrentPage('profile')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👤</div><span className="text-[11px] font-medium">Profile</span></button>
               </div>
             </div>
           </div>
@@ -489,7 +527,7 @@
 
       const Profile = () => (
         <Shell>
-          <Notification notice={notice} />
+          <Notification />
           <div className="rene-gradient floating-header">
             <Section className="py-5 flex items-center gap-3 text-white">
               <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
@@ -512,18 +550,18 @@
                 <Stat label="Total XP" value={heroData.totalPoints} />
                 <Stat label="Best Streak" value={streakData.bestStreak} />
                 <Stat label="Medication Rate" value={'94%'} />
-                <Stat label="Achievements" value={2} />
+                <Stat label="Achievements" value={3} />
               </div>
             </Card>
 
             <Card className="p-5">
               <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2"><span>💬</span> Need Help?</h3>
               <p className="text-slate-600 text-sm mb-4">Our support team is here 24/7 to help with any questions about RENÉ or your kidney health journey.</p>
-              <button onClick={() => notify('Support is here.')} className="w-full px-5 py-3 rounded-lg font-bold bg-accent-600 hover:bg-accent-500 text-white" style="touch-action: manipulation;">Contact Support Team</button>
+              <button onClick={() => alert('Support is here.')} className="w-full px-5 py-3 rounded-lg font-bold bg-accent-600 hover:bg-accent-500 text-white">Contact Support Team</button>
             </Card>
           </Section>
 
-          <div className="fixed inset-x-0 bottom-0 z-40 bottom-nav" style="padding-bottom: env(safe-area-inset-bottom)">
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-screen-lg bottom-nav">
             <div className="mx-auto max-w-[1000px]">
               <div className="grid grid-cols-4 gap-2 px-4 py-3">
                 <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
@@ -538,7 +576,7 @@
 
       const Wellness = () => (
         <Shell>
-          <Notification notice={notice} />
+          <Notification />
           <div className="rene-gradient floating-header">
             <Section className="py-5 flex items-center gap-3 text-white">
               <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
@@ -547,26 +585,25 @@
             </Section>
           </div>
           <Section className="py-6 space-y-4 pb-28">
-            <Card className="p-5"><div className="font-semibold mb-2">Mindfulness</div><button className="px-4 py-2 rounded bg-accent-600 text-white" onClick={()=>notify('Breathing started')}>Start breathing</button></Card>
-            <Card className="p-5"><div className="font-semibold mb-2">Guided audio</div><button className="px-4 py-2 rounded bg-slate-100" onClick={()=>notify('Playing 5-min relax')}>Play 5-min relax</button></Card>
+            <Card className="p-5">
+              <div className="font-semibold mb-2">Mindfulness</div>
+              <button className="px-4 py-2 rounded bg-accent-600 text-white" onClick={()=>alert('Start breathing exercise')}>
+                Start breathing
+              </button>
+            </Card>
+            <Card className="p-5">
+              <div className="font-semibold mb-2">Guided audio</div>
+              <button className="px-4 py-2 rounded bg-slate-100" onClick={()=>alert('Play 5-min relax audio')}>
+                Play 5-min relax
+              </button>
+            </Card>
           </Section>
-
-          <div className="fixed inset-x-0 bottom-0 z-40 bottom-nav" style="padding-bottom: env(safe-area-inset-bottom)">
-            <div className="mx-auto max-w-[1000px]">
-              <div className="grid grid-cols-4 gap-2 px-4 py-3">
-                <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
-                <button onClick={() => setCurrentPage('goals')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🎯</div><span className="text-[11px] font-medium">Goals</span></button>
-                <button onClick={() => setCurrentPage('chat')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👥</div><span className="text-[11px] font-medium">Heroes</span></button>
-                <button onClick={() => setCurrentPage('profile')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👤</div><span className="text-[11px] font-medium">Profile</span></button>
-              </div>
-            </div>
-          </div>
         </Shell>
       );
 
       const Symptoms = () => (
         <Shell>
-          <Notification notice={notice} />
+          <Notification />
           <div className="rene-gradient floating-header">
             <Section className="py-5 flex items-center gap-3 text-white">
               <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
@@ -577,31 +614,20 @@
           <Section className="py-6 space-y-4 pb-28">
             <Card className="p-5 space-y-3">
               <label className="block text-sm">Nausea (0–10)</label>
-              <input type="range" min="0" max="10" className="w-full"/>
+              <input type="range" min="0" max="10" className="w-full" />
               <label className="block text-sm">Fatigue (0–10)</label>
-              <input type="range" min="0" max="10" className="w-full"/>
+              <input type="range" min="0" max="10" className="w-full" />
               <label className="block text-sm">Cramps (0–10)</label>
-              <input type="range" min="0" max="10" className="w-full"/>
-              <button className="px-4 py-2 rounded bg-accent-600 text-white" onClick={()=>notify('Symptoms saved')}>Save</button>
+              <input type="range" min="0" max="10" className="w-full" />
+              <button className="px-4 py-2 rounded bg-accent-600 text-white" onClick={()=>alert('Symptoms saved')}>Save</button>
             </Card>
           </Section>
-
-          <div className="fixed inset-x-0 bottom-0 z-40 bottom-nav" style="padding-bottom: env(safe-area-inset-bottom)">
-            <div className="mx-auto max-w-[1000px]">
-              <div className="grid grid-cols-4 gap-2 px-4 py-3">
-                <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
-                <button onClick={() => setCurrentPage('goals')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🎯</div><span className="text-[11px] font-medium">Goals</span></button>
-                <button onClick={() => setCurrentPage('chat')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👥</div><span className="text-[11px] font-medium">Heroes</span></button>
-                <button onClick={() => setCurrentPage('profile')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👤</div><span className="text-[11px] font-medium">Profile</span></button>
-              </div>
-            </div>
-          </div>
         </Shell>
       );
 
       const Meds = () => (
         <Shell>
-          <Notification notice={notice} />
+          <Notification />
           <div className="rene-gradient floating-header">
             <Section className="py-5 flex items-center gap-3 text-white">
               <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
@@ -616,26 +642,15 @@
                 <li>Sevelamer 800 mg — 08:30</li>
                 <li>Erythropoietin — 18:00</li>
               </ul>
-              <button className="mt-3 px-4 py-2 rounded bg-slate-100" onClick={()=>notify('Reminders configured')}>Configure reminders</button>
+              <button className="mt-3 px-4 py-2 rounded bg-slate-100" onClick={()=>alert('Reminders configured')}>Configure reminders</button>
             </Card>
           </Section>
-
-          <div className="fixed inset-x-0 bottom-0 z-40 bottom-nav" style="padding-bottom: env(safe-area-inset-bottom)">
-            <div className="mx-auto max-w-[1000px]">
-              <div className="grid grid-cols-4 gap-2 px-4 py-3">
-                <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
-                <button onClick={() => setCurrentPage('goals')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🎯</div><span className="text-[11px] font-medium">Goals</span></button>
-                <button onClick={() => setCurrentPage('chat')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👥</div><span className="text-[11px] font-medium">Heroes</span></button>
-                <button className="flex flex-col items-center rounded-lg py-1 text-accent-600 bg-accent-50 font-semibold"><div className="text-xl">👤</div><span className="text-[11px]">Profile</span></button>
-              </div>
-            </div>
-          </div>
         </Shell>
       );
 
       const Dialysis = () => (
         <Shell>
-          <Notification notice={notice} />
+          <Notification />
           <div className="rene-gradient floating-header">
             <Section className="py-5 flex items-center gap-3 text-white">
               <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
@@ -650,42 +665,36 @@
                   <div className="font-bold">Session tools</div>
                   <div className="text-xs text-slate-500">Check-ins, games & entertainment</div>
                 </div>
-                {!dialysisActive ? (
-                  <button className="px-4 py-2 rounded bg-accent-600 text-white" onClick={startDialysis} style="touch-action: manipulation;">Start session</button>
-                ) : (
-                  <button className="px-4 py-2 rounded bg-rose-600 text-white" onClick={stopDialysis} style="touch-action: manipulation;">End session</button>
-                )}
+                <button className="px-4 py-2 rounded bg-accent-600 text-white"
+                        onClick={() => { setDialysisActive(true); notify('Dialysis session started'); }}>
+                  Start session
+                </button>
               </div>
             </Card>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Card className="p-5 cursor-pointer" onClick={()=>setCurrentPage('symptoms')}>
+              <Card className="p-5 cursor-pointer" onClick={()=>alert('Mood questionnaire')}>
                 <div className="text-2xl mb-2">🙂</div>
                 <div className="font-bold">Mood & Symptoms</div>
                 <div className="text-sm text-slate-600">Quick PROMs during session</div>
               </Card>
-              <Card className="p-5 cursor-pointer" onClick={()=>notify('Opening mini games') }>
+              <Card className="p-5 cursor-pointer" onClick={()=>alert('Open mini games')}>
                 <div className="text-2xl mb-2">🎮</div>
                 <div className="font-bold">Mini-games</div>
                 <div className="text-sm text-slate-600">Light games to pass time</div>
               </Card>
-              <Card className="p-5 cursor-pointer" onClick={()=>notify('Opening entertainment hub') }>
+              <Card className="p-5 cursor-pointer" onClick={()=>alert('Open entertainment hub')}>
                 <div className="text-2xl mb-2">🎧</div>
                 <div className="font-bold">Entertainment</div>
                 <div className="text-sm text-slate-600">Music, podcasts, videos</div>
               </Card>
             </div>
-          </Section>
-
-          <div className="fixed inset-x-0 bottom-0 z-40 bottom-nav" style="padding-bottom: env(safe-area-inset-bottom)">
-            <div className="mx-auto max-w-[1000px]">
-              <div className="grid grid-cols-4 gap-2 px-4 py-3">
-                <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
-                <button onClick={() => setCurrentPage('goals')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🎯</div><span className="text-[11px] font-medium">Goals</span></button>
-                <button onClick={() => setCurrentPage('chat')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👥</div><span className="text-[11px] font-medium">Heroes</span></button>
-                <button onClick={() => setCurrentPage('profile')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👤</div><span className="text-[11px] font-medium">Profile</span></button>
-              </div>
+            <div className="text-center">
+              <button className="px-4 py-2 rounded bg-slate-100"
+                      onClick={() => { setDialysisActive(false); notify('Dialysis session ended'); }}>
+                End session
+              </button>
             </div>
-          </div>
+          </Section>
         </Shell>
       );
 
@@ -707,7 +716,8 @@
       return <Page/>;
     };
 
-    ReactDOM.render(React.createElement(App), document.getElementById('root'));
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
