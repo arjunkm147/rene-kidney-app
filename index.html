@@ -73,8 +73,13 @@
     @media (min-width:768px){.app-shell{max-width:800px}}
     @media (min-width:1024px){.app-shell{max-width:1000px}}
     .notification{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:1000;max-width:520px}
-    .input{border:1px solid #e2e8f0;border-radius:0.75rem;padding:0.5rem 0.75rem}
-    .pill{border:1px solid #e2e8f0;border-radius:999px;padding:0.25rem 0.6rem;font-size:.75rem}
+    /* Dropdown (details/summary) */
+    details.dropdown { border:1px solid #e2e8f0; border-radius:1rem; background:#fff; box-shadow:0 6px 24px rgba(15,23,42,.06); }
+    details.dropdown[open] { border-color:#cbd5e1; }
+    details.dropdown summary { list-style:none; cursor:pointer; user-select:none; }
+    details.dropdown summary::-webkit-details-marker { display:none; }
+    .chev { transition: transform .2s; }
+    details[open] .chev { transform: rotate(180deg); }
   </style>
 </head>
 <body>
@@ -92,7 +97,7 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // ---------- Small UI tokens ----------
+    // Shell & tokens
     const Shell = ({ children }) => (
       <div className="app-shell container mx-auto min-h-screen bg-white md:rounded-2xl md:shadow-card md:border md:border-slate-200 relative">
         {children}
@@ -100,6 +105,8 @@
     );
     const Section = ({ children, className = '' }) => (<div className={`px-5 sm:px-6 md:px-8 ${className}`}>{children}</div>);
     const Card = ({ children, className = '' }) => (<div className={`card card-hover ${className}`}>{children}</div>);
+
+    // Stat supports onGradient variant so it doesn't look washed out
     const Stat = ({ label, value, sub, className = '', variant = 'default' }) => {
       const isGradient = variant === 'onGradient';
       return (
@@ -110,6 +117,7 @@
         </div>
       );
     };
+
     const ReneBrand = ({ size = 'md' }) => {
       const sizes = { sm: ['w-8 h-8', 'text-lg'], md: ['w-12 h-12', 'text-2xl'], lg: ['w-16 h-16', 'text-3xl'] };
       const [img, txt] = sizes[size] || sizes.md;
@@ -120,6 +128,7 @@
         </div>
       );
     };
+
     const Notification = ({ notice }) => notice && (
       <div className={`notification px-5 py-3 rounded-xl shadow-card text-white ${notice.type === 'success' ? 'bg-emerald-500' : 'bg-rose-500'}`}>
         <div className="flex items-center gap-2 text-sm font-semibold">
@@ -134,26 +143,18 @@
     const hasServiceWorkerSupport = () => 'serviceWorker' in navigator;
     const getPermission = () => (hasNotificationSupport() ? Notification.permission : 'denied');
 
-    // next occurrence of "HH:MM" (24h), optionally constrained to allowed weekdays
-    function nextDateTimeAt(timeStr, daysMask /* optional Set of weekday numbers 0-6 */, offsetMinutes = 0) {
+    function nextDateTimeAt(timeStr, daysMask) {
       const [hh, mm] = timeStr.split(':').map(n => parseInt(n, 10));
       const now = new Date();
       let d = new Date();
-      d.setSeconds(0,0);
       d.setHours(hh, mm, 0, 0);
-      if (offsetMinutes) d = new Date(d.getTime() - offsetMinutes*60000);
       if (daysMask && daysMask.size) {
         while (d <= now || !daysMask.has(d.getDay())) {
           d.setDate(d.getDate() + 1);
           d.setHours(hh, mm, 0, 0);
-          if (offsetMinutes) d = new Date(d.getTime() - offsetMinutes*60000);
         }
       } else {
-        if (d <= now) {
-          d.setDate(d.getDate() + 1);
-          d.setHours(hh, mm, 0, 0);
-          if (offsetMinutes) d = new Date(d.getTime() - offsetMinutes*60000);
-        }
+        if (d <= now) d.setDate(d.getDate() + 1);
       }
       return d;
     }
@@ -164,7 +165,7 @@
         if (hasServiceWorkerSupport()) {
           const reg = await navigator.serviceWorker.getRegistration();
           if (reg) {
-            await reg.showNotification(title, { body, tag, data, icon, badge, renotify:true });
+            await reg.showNotification(title, { body, tag, data, icon, badge, requireInteraction: false, renotify: true });
             return true;
           }
         }
@@ -176,143 +177,146 @@
       return false;
     }
 
-    // ---------- MAIN APP ----------
+    // ---------- Reusable Dropdown ----------
+    const Dropdown = ({ icon, title, subtitle, children, defaultOpen=false }) => (
+      <details className="dropdown p-0" open={defaultOpen}>
+        <summary className="flex items-center gap-3 px-4 py-3">
+          <div className="text-2xl">{icon}</div>
+          <div className="flex-1">
+            <div className="font-bold text-slate-800">{title}</div>
+            {subtitle && <div className="text-xs text-slate-600">{subtitle}</div>}
+          </div>
+          <svg className="chev w-5 h-5 text-slate-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.188l3.71-3.957a.75.75 0 111.08 1.04l-4.24 4.522a.75.75 0 01-1.08 0L5.25 8.27a.75.75 0 01-.02-1.06z" clipRule="evenodd"/></svg>
+        </summary>
+        <div className="px-4 pb-4 pt-2">
+          {children}
+        </div>
+      </details>
+    );
+
+    const RowBtn = ({ label, sub, onClick, icon='→' }) => (
+      <button onClick={onClick} className="w-full text-left flex items-center gap-3 px-3 py-3 rounded-lg border border-slate-200 hover:bg-slate-50">
+        <span className="text-lg">•</span>
+        <div className="flex-1">
+          <div className="font-medium text-slate-800">{label}</div>
+          {sub && <div className="text-xs text-slate-600">{sub}</div>}
+        </div>
+        <span className="text-slate-400">{icon}</span>
+      </button>
+    );
+
+    // ---------- App ----------
     const App = () => {
       const [currentPage, setCurrentPage] = useState('home');
       const [notice, setNotice] = useState(null);
 
-      // External Mobile Coach app link
+      // External Mobile Coach app link (opens in a new tab)
       const MOBILE_COACH_URL = 'https://app.mobile-coach.eu/dl/store?dm03-wSqDVy1PRjhhP7j1YT9t0VmDt5fDe3SV';
 
-      // Persist helpers
-      const load = (k, fallback) => { try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } };
-      const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-
-      // Reminders (richer)
+      // Reminders state
       const defaultReminders = {
-        enabled: true,
-        settings: { snoozeMins: 10, preAlertMins: 10, sound: true, vibration: true,
-          quiet: { enabled:false, start:'22:00', end:'07:00' } },
+        enabled: false,
         meds: [
           { id: 'med1', name: 'Morning meds', time: '08:30', enabled: true },
           { id: 'med2', name: 'Evening meds', time: '20:00', enabled: true },
         ],
-        dialysis: { enabled: true, time: '08:00', days: [1,3,5] }, // Mon/Wed/Fri
+        dialysis: { enabled: true, time: '08:00', days: [1,3,5] },
         hydration: { enabled: true, intervalMins: 120, activeStart: '09:00', activeEnd: '19:00' }
       };
-      const [reminders, setReminders] = useState(() => load('rene.reminders', defaultReminders));
-      const timersRef = useRef({ daily: [], dialysis: null, hydration: null, preview: [] }); // preview timers for demo only
+      const [reminders, setReminders] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('rene.reminders')) || defaultReminders; }
+        catch { return defaultReminders; }
+      });
 
-      // Missions
-      const defaultMissions = [
-        { id: 1, title: 'Morning Medication', xp: 50, cat: 'Medication', done: true, daily: true },
-        { id: 2, title: 'Hydration Target (≤ 2L)', xp: 30, cat: 'Hydration', done: false, daily: true },
-        { id: 3, title: 'Walk 8000 steps', xp: 40, cat: 'Activity', done: false, daily: true },
-        { id: 4, title: 'Evening Medication', xp: 50, cat: 'Medication', done: false, daily: true },
-        { id: 5, title: 'Mood Check-in', xp: 20, cat: 'Wellness', done: false, daily: true },
-      ];
-      const [missions, setMissions] = useState(() => load('rene.missions', defaultMissions));
-      const [missionFilter, setMissionFilter] = useState('All');
+      const timersRef = useRef({ daily: [], dialysis: null, hydration: null });
 
-      // Chat
+      const [heroData, setHeroData] = useState({
+        name: 'Leandro', age: 15, location: 'Lausanne', level: 8, xp: 1840, xpToNext: 2000, totalPoints: 15420, joinDate: 'March 2024'
+      });
+
+      const [streakData] = useState({
+        currentStreak: 5, bestStreak: 7, medicationTaken: true, medicationTime: '08:30 AM',
+        fluidIntake: 1400, fluidTarget: 2000, stepCount: 6200, stepTarget: 8000,
+        intensityMinutes: 36, intensityTarget: 150, sleepHours: 7.5, moodRating: 4
+      });
+
+      const [todayGoals, setTodayGoals] = useState([
+        { id: 1, title: 'Morning Medication', completed: true, xp: 50, icon: '💊' },
+        { id: 2, title: 'Hydration Target (≤ 2L)', completed: false, xp: 30, icon: '💧' },
+        { id: 3, title: 'Walk 8000 steps', completed: false, xp: 40, icon: '👟' },
+        { id: 4, title: 'Evening Medication', completed: false, xp: 50, icon: '💊' },
+        { id: 5, title: 'Mood Check-in', completed: false, xp: 20, icon: '😊' }
+      ]);
+
       const [chatMessages, setChatMessages] = useState([
         { id: 1, user: 'Sofia', message: 'Completed 7-day streak 🎉', time: '5m', likes: 12, avatar: '🦸‍♀️' },
         { id: 2, user: 'Marcus', message: 'Intensity minutes up to 120 this week!', time: '18m', likes: 6, avatar: '🦸‍♂️' },
       ]);
       const [newMessage, setNewMessage] = useState('');
 
-      // Meds database
-      const defaultMedsList = [
-        { id: 'rx1', name: 'Sevelamer', dose: '800 mg', notes: 'With meals', times: ['08:30','12:30','18:30'], refillDate: '' },
-        { id: 'rx2', name: 'Erythropoietin', dose: '10,000 IU', notes: 'SC, weekly', times: ['18:00'], refillDate: '' },
-      ];
-      const [medsList, setMedsList] = useState(() => load('rene.meds', defaultMedsList));
-      const [takenToday, setTakenToday] = useState(() => load('rene.meds.taken.'+new Date().toDateString(), {}));
-
-      // Symptom logs
-      const [symptomLogs, setSymptomLogs] = useState(() => load('rene.symptoms', []));
-
-      // Dialysis logs
-      const [dialysisLogs, setDialysisLogs] = useState(() => load('rene.dialysisLogs', []));
-
-      // Hero data & streak (same as before)
-      const [heroData, setHeroData] = useState({
-        name: 'Leandro', age: 15, location: 'Lausanne', level: 8, xp: 1840, xpToNext: 2000, totalPoints: 15420, joinDate: 'March 2024'
-      });
-      const [streakData, setStreakData] = useState({
-        currentStreak: 5, bestStreak: 7, medicationTaken: true, medicationTime: '08:30 AM',
-        fluidIntake: 1400, fluidTarget: 2000, stepCount: 6200, stepTarget: 8000,
-        intensityMinutes: 36, intensityTarget: 150, sleepHours: 7.5, moodRating: 4
-      });
-
-      // Dialysis session runtime
+      // Dialysis session mock notifications
       const [dialysisActive, setDialysisActive] = useState(false);
-      const [dialysisTimer, setDialysisTimer] = useState({ startedAt: null, elapsed: 0, durationMins: 240 });
       const dialysisTimerRef = useRef(null);
-
-      // SW + notifications
-      const [perm, setPerm] = useState(getPermission());
-      const [swReady, setSwReady] = useState(false);
 
       const notify = (message, type = 'success', timeout = 2500) => {
         setNotice({ message, type });
         if (timeout) setTimeout(() => setNotice(null), timeout);
       };
 
-      // ---------- Utilities ----------
-      const saveMeds = (v) => { setMedsList(v); save('rene.meds', v); };
-      const saveReminders = (v) => { setReminders(v); save('rene.reminders', v); };
-      const saveMissions = (v) => { setMissions(v); save('rene.missions', v); };
-      const saveSymptoms = (v) => { setSymptomLogs(v); save('rene.symptoms', v); };
-      const saveDialysisLogs = (v) => { setDialysisLogs(v); save('rene.dialysisLogs', v); };
+      const completeGoal = (id) => {
+        setTodayGoals(gs => gs.map(g => g.id === id ? { ...g, completed: true } : g));
+        const g = todayGoals.find(x => x.id === id);
+        if (g && !g.completed) { setHeroData(h => ({ ...h, xp: h.xp + g.xp })); notify(`+${g.xp} XP • ${g.title}`); }
+      };
 
-      // ---------- Router & hash deep-links ----------
+      const sendMessage = () => {
+        if (!newMessage.trim()) return;
+        setChatMessages(ms => [{ id: ms.length + 1, user: heroData.name, message: newMessage, time: 'now', likes: 0, avatar: '🦸' }, ...ms]);
+        setNewMessage('');
+        notify('Message sent');
+      };
+
+      const startDialysis = () => {
+        if (dialysisActive) return;
+        setDialysisActive(true);
+        notify('Dialysis session started. You will get periodic check-ins.', 'success', 3000);
+        dialysisTimerRef.current = setInterval(() => {
+          notify('How are you feeling? Tap to log symptoms.', 'success', 4000);
+        }, 60000);
+      };
+      const stopDialysis = () => {
+        setDialysisActive(false);
+        if (dialysisTimerRef.current) { clearInterval(dialysisTimerRef.current); dialysisTimerRef.current = null; }
+        notify('Session ended', 'success');
+      };
+      useEffect(() => () => { if (dialysisTimerRef.current) clearInterval(dialysisTimerRef.current); }, []);
+
+      // ---- Notifications: permission + SW registration
+      const [perm, setPerm] = useState(getPermission());
+      const [swReady, setSwReady] = useState(false);
+
       useEffect(() => {
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(() => setSwReady(true)).catch(()=>{});
-          navigator.serviceWorker.addEventListener?.('message', (e) => {
-            if (e.data?.type === 'NOTIF_CLICKED' && e.data.url) {
-              const hash = new URL(e.data.url, location.href).hash;
-              routeHash(hash);
-            }
-          });
+        async function boot() {
+          if ('serviceWorker' in navigator) {
+            try {
+              const reg = await navigator.serviceWorker.register('sw.js');
+              await navigator.serviceWorker.ready;
+              setSwReady(true);
+            } catch (e) { console.warn('SW register failed:', e); }
+          }
         }
-        // initial route from hash
-        routeHash(location.hash);
-        window.addEventListener('hashchange', () => routeHash(location.hash));
-        return () => window.removeEventListener('hashchange', () => routeHash(location.hash));
+        boot();
       }, []);
 
-      useEffect(() => { // push current page to hash
-        const map = { home:'#home', goals:'#goals', reminders:'#reminders', chat:'#chat', profile:'#profile', wellness:'#wellness', symptoms:'#symptoms', meds:'#meds', dialysis:'#dialysis' };
-        const h = map[currentPage] || '#home';
-        if (location.hash !== h) history.replaceState(null, '', h);
-      }, [currentPage]);
-
-      function routeHash(hash) {
-        switch ((hash||'').toLowerCase()) {
-          case '#meds': setCurrentPage('meds'); break;
-          case '#dialysis': setCurrentPage('dialysis'); break;
-          case '#symptoms': setCurrentPage('symptoms'); break;
-          case '#reminders': setCurrentPage('reminders'); break;
-          case '#goals': setCurrentPage('goals'); break;
-          case '#chat': setCurrentPage('chat'); break;
-          case '#profile': setCurrentPage('profile'); break;
-          case '#wellness': setCurrentPage('wellness'); break;
-          default: setCurrentPage('home');
-        }
-      }
-
       const requestPermission = async () => {
-        if (!hasNotificationSupport()) { notify('Notifications not supported on this browser', 'error'); return; }
+        if (!('Notification' in window)) { notify('Notifications not supported on this browser', 'error'); return; }
         try {
           const result = await Notification.requestPermission();
           setPerm(result);
-          notify(result === 'granted' ? 'Notifications enabled ✅' : 'Notifications blocked ❌', result === 'granted' ? 'success' : 'error');
+          if (result === 'granted') notify('Notifications enabled ✅'); else notify('Notifications blocked ❌', 'error');
         } catch { notify('Permission request failed', 'error'); }
       };
 
-      // ---------- Reminder scheduling ----------
       const clearAllTimers = () => {
         timersRef.current.daily.forEach(id => clearTimeout(id));
         timersRef.current.daily = [];
@@ -320,29 +324,25 @@
         timersRef.current.dialysis = null;
         if (timersRef.current.hydration) clearInterval(timersRef.current.hydration);
         timersRef.current.hydration = null;
-        timersRef.current.preview.forEach(id => clearTimeout(id));
-        timersRef.current.preview = [];
       };
 
       function scheduleAll() {
         clearAllTimers();
         if (!reminders.enabled) return;
 
-        const pre = reminders.settings?.preAlertMins || 0;
-
         // MEDS
         for (const m of reminders.meds) {
           if (!m.enabled) continue;
-          const target = nextDateTimeAt(m.time, null, pre);
+          const target = nextDateTimeAt(m.time);
           const delay = Math.max(0, target - new Date());
           const id = setTimeout(function tick() {
             showBrowserNotification({
               title: `💊 ${m.name}`,
-              body: pre ? `Starts in ${pre} min (${m.time})` : `It's ${m.time}. Mark dose taken.`,
+              body: `It's ${m.time}. Mark medication as taken.`,
               tag: `med-${m.id}-${m.time}`,
               data: { url: location.origin + location.pathname + '#meds' }
             }).then(ok => { if (!ok) notify(`💊 ${m.name} reminder`, 'success'); });
-            const next = nextDateTimeAt(m.time, null, pre);
+            const next = nextDateTimeAt(m.time);
             const nextDelay = Math.max(0, next - new Date());
             const newId = setTimeout(tick, nextDelay);
             const idx = timersRef.current.daily.indexOf(id);
@@ -353,17 +353,17 @@
 
         // DIALYSIS
         if (reminders.dialysis?.enabled && reminders.dialysis.days?.length) {
-          const days = new Set(reminders.dialysis.days);
-          const t = nextDateTimeAt(reminders.dialysis.time, days, pre);
+          const daysSet = new Set(reminders.dialysis.days);
+          const t = nextDateTimeAt(reminders.dialysis.time, daysSet);
           const delay = Math.max(0, t - new Date());
           timersRef.current.dialysis = setTimeout(function rearm() {
             showBrowserNotification({
-              title: '🩺 Dialysis',
-              body: pre ? `Session starts in ${pre} min (${reminders.dialysis.time})` : `Session at ${reminders.dialysis.time}`,
+              title: '🩺 Dialysis today',
+              body: `Session at ${reminders.dialysis.time}. Do a quick check-in?`,
               tag: 'dialysis-reminder',
               data: { url: location.origin + location.pathname + '#dialysis' }
             }).then(ok => { if (!ok) notify('🩺 Dialysis reminder', 'success'); });
-            const next = nextDateTimeAt(reminders.dialysis.time, days, pre);
+            const next = nextDateTimeAt(reminders.dialysis.time, daysSet);
             const nextDelay = Math.max(0, next - new Date());
             timersRef.current.dialysis = setTimeout(rearm, nextDelay);
           }, delay);
@@ -374,93 +374,52 @@
           const intervalMs = Math.max(15, reminders.hydration.intervalMins || 120) * 60 * 1000;
           timersRef.current.hydration = setInterval(() => {
             const now = new Date();
-            const [sh, sm] = (reminders.hydration.activeStart || '09:00').split(':').map(Number);
-            const [eh, em] = (reminders.hydration.activeEnd || '19:00').split(':').map(Number);
-            const s = new Date(now); s.setHours(sh, sm, 0, 0);
-            const e = new Date(now); e.setHours(eh, em, 0, 0);
-            // quiet hours check
-            if (reminders.settings?.quiet?.enabled) {
-              const [qh, qm] = (reminders.settings.quiet.start || '22:00').split(':').map(Number);
-              const [qh2, qm2] = (reminders.settings.quiet.end || '07:00').split(':').map(Number);
-              const qs = new Date(now); qs.setHours(qh, qm, 0, 0);
-              const qe = new Date(now); qe.setHours(qh2, qm2, 0, 0);
-              // handle overnight window
-              const inQuiet = qs <= qe ? (now >= qs && now <= qe) : (now >= qs || now <= qe);
-              if (inQuiet) return; // skip hydration during quiet hours
-            }
-            if (now >= s && now <= e) {
-              showBrowserNotification({ title: '💧 Hydration target', body: 'Quick sip to stay on target.', tag: 'hydration', data: { url: location.href } })
-                .then(ok => { if (!ok) notify('💧 Hydration nudge', 'success'); });
+            const inWindow = (ts) => {
+              const [sh, sm] = (reminders.hydration.activeStart || '09:00').split(':').map(n=>parseInt(n,10));
+              const [eh, em] = (reminders.hydration.activeEnd || '19:00').split(':').map(n=>parseInt(n,10));
+              const s = new Date(ts); s.setHours(sh, sm, 0, 0);
+              const e = new Date(ts); e.setHours(eh, em, 0, 0);
+              return ts >= s && ts <= e;
+            };
+            if (inWindow(now)) {
+              showBrowserNotification({
+                title: '💧 Hydration target',
+                body: 'Quick sip time. Keep within your daily target.',
+                tag: 'hydration-nudge',
+                data: { url: location.href }
+              }).then(ok => { if (!ok) notify('💧 Hydration nudge', 'success'); });
             }
           }, intervalMs);
         }
       }
 
-      useEffect(() => { save('rene.reminders', reminders); scheduleAll(); }, [reminders]);
+      useEffect(() => {
+        localStorage.setItem('rene.reminders', JSON.stringify(reminders));
+        scheduleAll();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [reminders]);
 
-      // ---------- Missions ----------
-      const completeMission = (id) => {
-        setMissions(prev => {
-          const next = prev.map(m => m.id === id ? { ...m, done: true } : m);
-          saveMissions(next);
-          const ms = prev.find(m => m.id === id);
-          if (ms && !ms.done) {
-            setHeroData(h => ({ ...h, xp: h.xp + (ms.xp || 0) }));
-            notify(`+${ms.xp} XP • ${ms.title}`);
-          }
-          return next;
-        });
-      };
-      const addMission = (newM) => {
-        setMissions(prev => {
-          const next = [{ ...newM, id: Date.now(), done:false }, ...prev];
-          saveMissions(next);
-          notify('Mission added');
-          return next;
-        });
-      };
-      const resetDailyMissions = () => {
-        setMissions(prev => {
-          const next = prev.map(m => m.daily ? { ...m, done:false } : m);
-          saveMissions(next);
-          notify('Daily missions reset');
-          return next;
-        });
-      };
+      // Handle deep links from notifications (#meds, #reminders, #dialysis, etc.)
+      useEffect(() => {
+        const routeFromHash = () => {
+          const map = {
+            '#reminders': 'reminders',
+            '#meds': 'meds',
+            '#dialysis': 'dialysis',
+            '#goals': 'goals',
+            '#chat': 'chat',
+            '#symptoms': 'symptoms',
+            '#wellness': 'wellness'
+          };
+          const page = map[window.location.hash];
+          if (page) setCurrentPage(page);
+        };
+        routeFromHash();
+        window.addEventListener('hashchange', routeFromHash);
+        return () => window.removeEventListener('hashchange', routeFromHash);
+      }, []);
 
-      // ---------- Med doses ----------
-      const markDoseTaken = (medId, time) => {
-        const key = 'rene.meds.taken.' + new Date().toDateString();
-        const updated = { ...takenToday, [medId + '|' + time]: true };
-        setTakenToday(updated);
-        save(key, updated);
-        notify('Dose marked as taken');
-      };
-
-      // ---------- Dialysis runtime ----------
-      const startDialysis = () => {
-        if (dialysisActive) return;
-        setDialysisActive(true);
-        const startedAt = Date.now();
-        setDialysisTimer({ startedAt, elapsed: 0, durationMins: dialysisTimer.durationMins });
-        dialysisTimerRef.current = setInterval(() => {
-          setDialysisTimer(t => ({ ...t, elapsed: Math.floor((Date.now() - startedAt)/1000) }));
-        }, 1000);
-        notify('Dialysis session started. You will get periodic check-ins.', 'success', 3000);
-      };
-      const endDialysis = () => {
-        if (dialysisTimerRef.current) clearInterval(dialysisTimerRef.current);
-        dialysisTimerRef.current = null;
-        setDialysisActive(false);
-        setDialysisTimer({ startedAt:null, elapsed:0, durationMins: dialysisTimer.durationMins });
-        const log = { id: Date.now(), date: new Date().toISOString(), durationMins: dialysisTimer.durationMins, notes: '' };
-        const next = [log, ...dialysisLogs];
-        saveDialysisLogs(next);
-        notify('Session ended & logged', 'success');
-      };
-      useEffect(() => () => { if (dialysisTimerRef.current) clearInterval(dialysisTimerRef.current); }, []);
-
-      // ---------- Home ----------
+      // ---------- Pages ----------
       const Home = () => (
         <Shell>
           <Notification notice={notice} />
@@ -475,6 +434,7 @@
                 </div>
               </div>
 
+              {/* XP strip */}
               <Card className="mt-5 p-5">
                 <div className="flex items-start justify-between">
                   <div>
@@ -497,6 +457,7 @@
           </div>
 
           <Section className="py-6 space-y-8 pb-28">
+            {/* Streak card */}
             <div className="rounded-2xl p-6 text-white shadow-card bg-gradient-to-tr from-orange-500 via-orange-400 to-amber-400">
               <div className="flex items-start justify-between">
                 <div>
@@ -520,7 +481,7 @@
               </div>
             </div>
 
-            {/* Quick Access modules */}
+            {/* Quick Access modules (unchanged) */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <a href={MOBILE_COACH_URL} target="_blank" rel="noopener noreferrer" className="block focus:outline-none focus:ring-2 focus:ring-accent-500 rounded-xl">
                 <Card className="p-5">
@@ -542,37 +503,85 @@
                 <div className="font-bold text-slate-800">Mission Center</div>
                 <div className="text-sm text-slate-600">Track your daily goals</div>
               </Card>
-
               <Card className="p-5 cursor-pointer" onClick={() => setCurrentPage('chat')}>
                 <div className="text-3xl mb-2">👥</div>
                 <div className="font-bold text-slate-800">Hero Alliance</div>
                 <div className="text-sm text-slate-600">Challenges & leaderboard</div>
                 <div className="flex items-center gap-2 mt-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span><span className="text-[11px] font-semibold text-emerald-600">4 online</span></div>
               </Card>
+            </div>
 
-              <Card className="p-5 cursor-pointer" onClick={() => setCurrentPage('wellness')}>
-                <div className="text-3xl mb-2">🧘</div>
-                <div className="font-bold text-slate-800">Wellness</div>
-                <div className="text-sm text-slate-600">Mindfulness & content</div>
-              </Card>
+            {/* --- NEW: Action Hub (Dropdown menus) --- */}
+            <div className="space-y-4">
+              <Dropdown icon="📊" title="Overview" subtitle="Stats & quick actions" defaultOpen={true}>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+                  <Stat label="Total XP" value={heroData.totalPoints} />
+                  <Stat label="Best Streak" value={streakData.bestStreak} />
+                  <Stat label="Medication Rate" value={'94%'} />
+                  <Stat label="Intensity (wk)" value={`${streakData.intensityMinutes}m`} />
+                </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  <RowBtn label="View all missions" sub="Go to Mission Center" onClick={()=>setCurrentPage('goals')} />
+                  <RowBtn label="Open Hero Alliance" sub="Chat, challenges & leaderboard" onClick={()=>setCurrentPage('chat')} />
+                  <RowBtn label="Open Wellness" sub="Breathing & guided audio" onClick={()=>setCurrentPage('wellness')} />
+                </div>
+              </Dropdown>
 
-              <Card className="p-5 cursor-pointer" onClick={() => setCurrentPage('dialysis')}>
-                <div className="text-3xl mb-2">🩺</div>
-                <div className="font-bold text-slate-800">Dialysis</div>
-                <div className="text-sm text-slate-600">Session tools & check-ins</div>
-              </Card>
+              <Dropdown icon="⏰" title="Reminders" subtitle="Enable notifications & schedules">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  <RowBtn label="Manage reminders" sub="Dialysis • Meds • Hydration" onClick={()=>setCurrentPage('reminders')} />
+                  <RowBtn label="Enable notifications" sub="Browser permission" onClick={()=>requestPermission()} />
+                  <RowBtn label="Send test notification" sub="Verify it works" onClick={()=>showBrowserNotification({title:'🔔 Test', body:'If you see this, it works!', tag:'test'})} />
+                </div>
+              </Dropdown>
 
-              <Card className="p-5 cursor-pointer" onClick={() => setCurrentPage('symptoms')}>
-                <div className="text-3xl mb-2">📝</div>
-                <div className="font-bold text-slate-800">Symptom Tracker</div>
-                <div className="text-sm text-slate-600">Quick daily check-in</div>
-              </Card>
+              <Dropdown icon="⚙️" title="Mission Center" subtitle="Daily goals & XP">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  <RowBtn label="Today's progress" sub="See completed vs total" onClick={()=>setCurrentPage('goals')} />
+                  <RowBtn label="View all missions" sub="Complete to earn XP" onClick={()=>setCurrentPage('goals')} />
+                  <RowBtn label="Add a new mission" sub="(coming soon)" onClick={()=>alert('Coming soon')} />
+                </div>
+              </Dropdown>
 
-              <Card className="p-5 cursor-pointer" onClick={() => setCurrentPage('meds')}>
-                <div className="text-3xl mb-2">💊</div>
-                <div className="font-bold text-slate-800">Medication Overview</div>
-                <div className="text-sm text-slate-600">Doses • Adherence • Refills</div>
-              </Card>
+              <Dropdown icon="👥" title="Hero Alliance" subtitle="Chat & compete">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  <RowBtn label="Open chat" sub="Encouragement & replies" onClick={()=>setCurrentPage('chat')} />
+                  <RowBtn label="Create challenge" sub="Hydration / intensity" onClick={()=>{ setCurrentPage('chat'); setTimeout(()=>alert('Challenge creator (demo)'),0); }} />
+                  <RowBtn label="Leaderboard" sub="Weekly XP rankings" onClick={()=>setCurrentPage('chat')} />
+                </div>
+              </Dropdown>
+
+              <Dropdown icon="🧘" title="Wellness" subtitle="Mindfulness & content">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  <RowBtn label="Open Wellness" sub="Breathing & audio" onClick={()=>setCurrentPage('wellness')} />
+                  <RowBtn label="Start breathing" sub="3-min exercise" onClick={()=>{ setCurrentPage('wellness'); setTimeout(()=>alert('Breathing started'),0); }} />
+                  <RowBtn label="Play 5-min relax" sub="Guided audio" onClick={()=>{ setCurrentPage('wellness'); setTimeout(()=>alert('Playing 5-min relax'),0); }} />
+                </div>
+              </Dropdown>
+
+              <Dropdown icon="🩺" title="Dialysis" subtitle="Sessions, check-ins & fun">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  <RowBtn label="Open Dialysis" sub="Session tools" onClick={()=>setCurrentPage('dialysis')} />
+                  <RowBtn label="Start session" sub="Begin check-ins" onClick={()=>{ setCurrentPage('dialysis'); setTimeout(()=>alert('Session started (demo)'),0); }} />
+                  <RowBtn label="Mood & symptoms" sub="Quick PROMs" onClick={()=>setCurrentPage('symptoms')} />
+                </div>
+              </Dropdown>
+
+              <Dropdown icon="📝" title="Symptom Tracker" subtitle="Quick daily check-ins">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  <RowBtn label="Open Symptom Tracker" sub="Log symptoms" onClick={()=>setCurrentPage('symptoms')} />
+                  <RowBtn label="Log a quick entry" sub="(demo)" onClick={()=>{ setCurrentPage('symptoms'); setTimeout(()=>alert('Logged (demo)'),0); }} />
+                  <RowBtn label="View history" sub="(coming soon)" onClick={()=>alert('History coming soon')} />
+                </div>
+              </Dropdown>
+
+              <Dropdown icon="💊" title="Medications" subtitle="Overview & reminders">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  <RowBtn label="Medication overview" sub="Today’s doses" onClick={()=>setCurrentPage('meds')} />
+                  <RowBtn label="Configure med reminders" sub="Times & alerts" onClick={()=>setCurrentPage('reminders')} />
+                  <RowBtn label="Add a medication" sub="(coming soon)" onClick={()=>alert('Add medication coming soon')} />
+                </div>
+              </Dropdown>
             </div>
           </Section>
 
@@ -590,711 +599,159 @@
         </Shell>
       );
 
-      // ---------- Mission Center ----------
-      const Goals = () => {
-        const cats = ['All','Medication','Hydration','Activity','Wellness','Custom'];
-        const filtered = missions.filter(m => missionFilter==='All' ? true : m.cat===missionFilter);
-        const weeklyComplete = missions.filter(m => m.done).length;
-        const weeklyTotal = missions.length;
-
-        // add mission form state
-        const [form, setForm] = useState({ title:'', xp:20, cat:'Custom', daily:true });
-
-        return (
-          <Shell>
-            <Notification notice={notice} />
-            <div className="rene-gradient floating-header">
-              <Section className="py-5 flex items-center gap-3 text-white">
-                <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
-                <ReneBrand size="sm" />
-                <span className="ml-auto text-lg font-bold">Mission Center</span>
-              </Section>
-            </div>
-
-            <Section className="py-6 space-y-6 pb-28">
-              <Card className="p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-800">Weekly Overview</h3>
-                    <p className="text-xs text-slate-600">{weeklyComplete}/{weeklyTotal} completed</p>
-                  </div>
-                  <div className="flex gap-2">
-                    {cats.map(c => (
-                      <button key={c} onClick={()=>setMissionFilter(c)} className={`pill ${missionFilter===c?'bg-accent-600 text-white border-accent-600':'bg-white text-slate-700'}`}>{c}</button>
-                    ))}
-                    <button onClick={resetDailyMissions} className="pill bg-white text-slate-700">Reset daily</button>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Add custom mission */}
-              <Card className="p-5">
-                <div className="text-slate-800 font-bold mb-3">New Mission</div>
-                <div className="grid sm:grid-cols-4 gap-3">
-                  <input className="input" placeholder="e.g., 10-min stretch" value={form.title} onChange={e=>setForm({...form, title:e.target.value})}/>
-                  <input type="number" className="input" placeholder="XP" min="5" max="200" value={form.xp} onChange={e=>setForm({...form, xp:parseInt(e.target.value||'0',10)})}/>
-                  <select className="input" value={form.cat} onChange={e=>setForm({...form, cat:e.target.value})}>
-                    <option>Medication</option><option>Hydration</option><option>Activity</option><option>Wellness</option><option>Custom</option>
-                  </select>
-                  <label className="inline-flex items-center gap-2"><input type="checkbox" checked={form.daily} onChange={e=>setForm({...form, daily:e.target.checked})}/><span className="text-sm">Repeat daily</span></label>
-                </div>
-                <div className="mt-3">
-                  <button disabled={!form.title.trim()} onClick={()=>{ addMission(form); setForm({ title:'', xp:20, cat:'Custom', daily:true }); }} className="px-4 py-2 rounded-lg bg-accent-600 text-white font-semibold disabled:opacity-60">Add mission</button>
-                </div>
-              </Card>
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><span>🎯</span> Missions</h3>
-                {filtered.map(m => (
-                  <Card key={m.id} className="p-5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-3xl">{m.cat==='Medication'?'💊':m.cat==='Hydration'?'💧':m.cat==='Activity'?'👟':m.cat==='Wellness'?'🧘':'⭐'}</span>
-                        <div>
-                          <div className={`text-base font-bold ${m.done ? 'line-through text-slate-500' : 'text-slate-800'}`}>{m.title}</div>
-                          <p className="text-xs text-slate-600 mt-0.5">{m.daily ? 'Daily' : 'One-off'} • {m.xp} XP • {m.cat}</p>
-                        </div>
-                      </div>
-                      <button onClick={() => completeMission(m.id)} disabled={m.done} className={`px-5 py-2 rounded-lg font-bold text-sm ${m.done ? 'bg-emerald-600 text-white' : 'bg-accent-600 hover:bg-accent-500 text-white'}`}>{m.done ? '✓ Done' : 'Complete'}</button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+      const Goals = () => (
+        <Shell>
+          <Notification notice={notice} />
+          <div className="rene-gradient floating-header">
+            <Section className="py-5 flex items-center gap-3 text-white">
+              <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
+              <ReneBrand size="sm" />
+              <span className="ml-auto text-lg font-bold">Mission Center</span>
             </Section>
+          </div>
 
-            <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-screen-lg bottom-nav">
-              <div className="mx-auto max-w-[1000px]">
-                <div className="grid grid-cols-4 gap-2 px-4 py-3">
-                  <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
-                  <button className="flex flex-col items-center rounded-lg py-1 text-accent-600 bg-accent-50 font-semibold"><div className="text-xl">🎯</div><span className="text-[11px]">Goals</span></button>
-                  <button onClick={() => setCurrentPage('chat')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👥</div><span className="text-[11px] font-medium">Heroes</span></button>
-                  <button onClick={() => setCurrentPage('profile')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👤</div><span className="text-[11px] font-medium">Profile</span></button>
-                </div>
+          <Section className="py-6 space-y-6 pb-28">
+            <Card className="p-5">
+              <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span>📊</span> Today's Progress</h3>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Stat label="Goals Complete" value={`${todayGoals.filter(g => g.completed).length}/${todayGoals.length}`} />
+                <Stat label="XP Earned" value={todayGoals.filter(g=>g.completed).reduce((s,g)=>s+g.xp,0)} />
               </div>
-            </div>
-          </Shell>
-        );
-      };
+            </Card>
 
-      // ---------- Hero Alliance ----------
-      const Chat = () => {
-        const [tab, setTab] = useState('xp'); // xp | steps | intensity
-        const [challengeForm, setChallengeForm] = useState({ type:'Hydration streak', opponent:'Sofia', lengthDays:3, prize:'50 XP' });
-
-        const lbData = {
-          xp:[{u:'Leandro',xp:420},{u:'Sofia',xp:380},{u:'Marcus',xp:310},{u:'Emma',xp:280}],
-          steps:[{u:'Sofia',xp:9500},{u:'Leandro',xp:8200},{u:'Emma',xp:7000},{u:'Marcus',xp:6600}],
-          intensity:[{u:'Marcus',xp:140},{u:'Leandro',xp:120},{u:'Emma',xp:95},{u:'Sofia',xp:90}],
-        };
-        const rows = lbData[tab];
-
-        const sendMessage = () => {
-          if (!newMessage.trim()) return;
-          setChatMessages(ms => [{ id: ms.length + 1, user: heroData.name, message: newMessage, time: 'now', likes: 0, avatar: '🦸' }, ...ms]);
-          setNewMessage('');
-          notify('Message sent');
-        };
-
-        const inviteLink = () => {
-          const link = location.origin + location.pathname + '#chat';
-          navigator.clipboard?.writeText(link);
-          notify('Invite link copied');
-        };
-
-        return (
-          <Shell>
-            <Notification notice={notice} />
-            <div className="rene-gradient floating-header">
-              <Section className="py-5 flex items-center gap-3 text-white">
-                <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
-                <ReneBrand size="sm" />
-                <span className="ml-auto text-lg font-bold">Hero Alliance</span>
-              </Section>
-            </div>
-
-            <Section className="py-4 space-y-4 pb-28">
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-slate-700 flex items-center gap-2"><span className="text-lg">🌟</span> Heroes Online</span>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span className="text-[11px] font-bold text-emerald-600">4 active</span>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Challenges */}
-              <Card className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-slate-800 font-bold">Challenges</h3>
-                  <button className="text-sm px-3 py-1 rounded-lg bg-slate-100" onClick={inviteLink}>Invite via link</button>
-                </div>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <div className="border rounded-lg p-3">
-                    <div className="font-semibold">Quick presets</div>
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                      {['Hydration 3d','Steps 10k/day','Intensity 100/wk','Meds streak 5d'].map((p,i)=>(
-                        <button key={i} onClick={()=>notify(`Preset “${p}” started`)} className="px-2 py-1 rounded bg-slate-100 text-sm">{p}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="border rounded-lg p-3">
-                    <div className="font-semibold mb-2">Create a challenge</div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <select className="input" value={challengeForm.type} onChange={e=>setChallengeForm({...challengeForm,type:e.target.value})}>
-                        <option>Hydration streak</option><option>Steps per day</option><option>Intensity minutes</option><option>Medication adherence</option>
-                      </select>
-                      <select className="input" value={challengeForm.opponent} onChange={e=>setChallengeForm({...challengeForm,opponent:e.target.value})}>
-                        <option>Sofia</option><option>Marcus</option><option>Emma</option><option>Open challenge</option>
-                      </select>
-                      <input className="input" type="number" min="1" max="30" value={challengeForm.lengthDays} onChange={e=>setChallengeForm({...challengeForm,lengthDays:parseInt(e.target.value||'1',10)})} placeholder="Days"/>
-                      <input className="input" value={challengeForm.prize} onChange={e=>setChallengeForm({...challengeForm,prize:e.target.value})} placeholder="Prize"/>
-                    </div>
-                    <button className="mt-2 px-3 py-2 rounded bg-accent-600 text-white" onClick={()=>notify('Challenge created')}>Start</button>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Leaderboards */}
-              <Card className="p-4">
-                <div className="flex gap-2 mb-3">
-                  <button className={`pill ${tab==='xp'?'bg-accent-600 text-white border-accent-600':'bg-white'}`} onClick={()=>setTab('xp')}>Weekly XP</button>
-                  <button className={`pill ${tab==='steps'?'bg-accent-600 text-white border-accent-600':'bg-white'}`} onClick={()=>setTab('steps')}>Steps</button>
-                  <button className={`pill ${tab==='intensity'?'bg-accent-600 text-white border-accent-600':'bg-white'}`} onClick={()=>setTab('intensity')}>Intensity</button>
-                </div>
-                <div className="divide-y">
-                  {rows.map((r,i)=> (
-                    <div key={i} className="flex items-center justify-between py-2">
-                      <div className="flex items-center gap-3">
-                        <span className="w-6 text-center font-bold">{i+1}</span>
-                        <span className="font-medium">{r.u}</span>
-                      </div>
-                      <span className="text-sm font-semibold text-slate-700">{r.xp}{tab==='xp'?' XP': tab==='steps'?' steps':' min'}</span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Chat feed */}
-              <div className="space-y-3 min-h-[30vh]">
-                {chatMessages.map(m => (
-                  <Card key={m.id} className="p-4">
-                    <div className="flex gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-800 to-rose-600 text-white grid place-items-center text-xl">{m.avatar}</div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1"><span className="font-bold text-slate-800">{m.user}</span><span className="text-[11px] text-slate-500 font-medium">{m.time}</span></div>
-                        <p className="text-slate-700 mb-3 leading-relaxed">{m.message}</p>
-                        <div className="flex items-center justify-between text-sm">
-                          <button onClick={() => setChatMessages(prev => prev.map(x => x.id === m.id ? { ...x, likes: x.likes + 1 } : x))} className="inline-flex items-center gap-2 text-slate-500 hover:text-rose-600"><span>❤️</span><span className="font-medium">{m.likes}</span></button>
-                          <button className="text-slate-500 hover:text-slate-700 font-medium">Reply</button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </Section>
-
-            {/* Fixed composer (mobile-friendly & non-overlapping) */}
-            <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-screen-lg px-4">
-              <Card className="p-3">
-                <form onSubmit={(e)=>{e.preventDefault(); sendMessage();}} className="flex gap-3">
-                  <input type="text" value={newMessage} onChange={(e)=>setNewMessage(e.target.value)}
-                    placeholder="Send encouragement to fellow heroes..." className="flex-1 px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-accent-500" />
-                  <button type="submit" disabled={!newMessage.trim()} className="px-5 py-2 rounded-lg font-bold bg-accent-600 text-white disabled:opacity-60">Send</button>
-                </form>
-              </Card>
-            </div>
-
-            <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-screen-lg bottom-nav">
-              <div className="mx-auto max-w-[1000px]">
-                <div className="grid grid-cols-4 gap-2 px-4 py-3">
-                  <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
-                  <button onClick={() => setCurrentPage('goals')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🎯</div><span className="text-[11px] font-medium">Goals</span></button>
-                  <button className="flex flex-col items-center rounded-lg py-1 text-accent-600 bg-accent-50 font-semibold"><div className="text-xl">👥</div><span className="text-[11px]">Heroes</span></button>
-                  <button onClick={() => setCurrentPage('profile')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👤</div><span className="text-[11px] font-medium">Profile</span></button>
-                </div>
-              </div>
-            </div>
-          </Shell>
-        );
-      };
-
-      // ---------- Reminders ----------
-      const Reminders = () => {
-        const [local, setLocal] = useState(reminders);
-        const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-        const permText = perm === 'default' ? 'Not requested' : (perm === 'granted' ? 'Granted' : 'Denied');
-
-        const toggleDay = (i) => {
-          const set = new Set(local.dialysis.days);
-          if (set.has(i)) set.delete(i); else set.add(i);
-          setLocal({...local, dialysis: {...local.dialysis, days: Array.from(set).sort()}});
-        };
-
-        const saveAll = () => { saveReminders(local); notify('Reminders saved & scheduled ✅'); };
-        const sendTest = () => {
-          showBrowserNotification({ title:'🔔 Test', body:'If you see this, notifications are working!', tag:'test', data:{ url: location.href+'#reminders'} })
-            .then(ok => { if (!ok) notify('Test shown in-app'); });
-        };
-        const demo = () => {
-          ['💊 Medication','🩺 Dialysis','💧 Hydration'].forEach((t,i)=> setTimeout(()=>showBrowserNotification({ title:t, body:'Demo reminder', tag:'demo', data:{url:location.href}}), (i+1)*1000));
-          notify('Demo queued…');
-        };
-
-        // Build a small preview of next triggers
-        const nexts = [];
-        const pre = local.settings?.preAlertMins || 0;
-        for (const m of local.meds) {
-          if (!m.enabled) continue;
-          const d = nextDateTimeAt(m.time, null, pre);
-          nexts.push({ label:`💊 ${m.name}`, time:d });
-        }
-        if (local.dialysis.enabled && local.dialysis.days.length) {
-          const d = nextDateTimeAt(local.dialysis.time, new Set(local.dialysis.days), pre);
-          nexts.push({ label:'🩺 Dialysis', time:d });
-        }
-
-        return (
-          <Shell>
-            <Notification notice={notice} />
-            <div className="rene-gradient floating-header">
-              <Section className="py-5 flex items-center gap-3 text-white">
-                <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
-                <ReneBrand size="sm" />
-                <span className="ml-auto text-lg font-bold">Reminders</span>
-              </Section>
-            </div>
-
-            <Section className="py-6 space-y-6 pb-28">
-              <Card className="p-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-bold">Notifications</div>
-                    <div className="text-xs text-slate-500">Permission: <span className="font-semibold">{permText}</span> • SW: {swReady ? 'Ready' : '—'}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={requestPermission} className="px-3 py-2 rounded-lg text-sm bg-slate-100">Enable</button>
-                    <label className="inline-flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={local.enabled} onChange={(e)=>setLocal({...local, enabled: e.target.checked})}/>
-                      <span>Reminders on</span>
-                    </label>
-                  </div>
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <button onClick={sendTest} className="px-3 py-2 rounded-lg text-sm bg-accent-600 text-white">Send test</button>
-                  <button onClick={demo} className="px-3 py-2 rounded-lg text-sm bg-slate-100">Demo triggers</button>
-                </div>
-              </Card>
-
-              <Card className="p-5">
-                <div className="font-bold mb-3">General settings</div>
-                <div className="grid sm:grid-cols-3 gap-3">
-                  <label className="text-sm">Pre-alert (mins)
-                    <input type="number" className="input mt-1" min="0" max="60" value={local.settings.preAlertMins} onChange={e=>setLocal({...local, settings:{...local.settings, preAlertMins:parseInt(e.target.value||'0',10)}})} />
-                  </label>
-                  <label className="text-sm">Snooze (mins)
-                    <input type="number" className="input mt-1" min="5" max="60" value={local.settings.snoozeMins} onChange={e=>setLocal({...local, settings:{...local.settings, snoozeMins:parseInt(e.target.value||'5',10)}})} />
-                  </label>
-                  <div className="flex items-center gap-4">
-                    <label className="text-sm inline-flex items-center gap-2 mt-6"><input type="checkbox" checked={local.settings.sound} onChange={e=>setLocal({...local, settings:{...local.settings, sound:e.target.checked}})} /><span>Sound</span></label>
-                    <label className="text-sm inline-flex items-center gap-2 mt-6"><input type="checkbox" checked={local.settings.vibration} onChange={e=>setLocal({...local, settings:{...local.settings, vibration:e.target.checked}})} /><span>Vibration</span></label>
-                  </div>
-                </div>
-                <div className="mt-3 grid sm:grid-cols-3 gap-3">
-                  <label className="text-sm">Quiet hours start
-                    <input type="time" className="input mt-1" value={local.settings.quiet.start} onChange={e=>setLocal({...local, settings:{...local.settings, quiet:{...local.settings.quiet, start:e.target.value}}})}/>
-                  </label>
-                  <label className="text-sm">Quiet hours end
-                    <input type="time" className="input mt-1" value={local.settings.quiet.end} onChange={e=>setLocal({...local, settings:{...local.settings, quiet:{...local.settings.quiet, end:e.target.value}}})}/>
-                  </label>
-                  <label className="text-sm inline-flex items-center gap-2 mt-6">
-                    <input type="checkbox" checked={local.settings.quiet.enabled} onChange={e=>setLocal({...local, settings:{...local.settings, quiet:{...local.settings.quiet, enabled:e.target.checked}}})}/>
-                    <span>Enable quiet hours</span>
-                  </label>
-                </div>
-              </Card>
-
-              <Card className="p-5">
-                <div className="font-bold mb-3">Medication reminders</div>
-                <div className="space-y-3">
-                  {local.meds.map((m, idx) => (
-                    <div key={m.id} className="grid grid-cols-12 items-center gap-3">
-                      <input className="col-span-4 input" value={m.name} onChange={e=>{ const copy=[...local.meds]; copy[idx]={...m, name:e.target.value}; setLocal({...local, meds:copy}); }}/>
-                      <input className="col-span-3 input" type="time" value={m.time} onChange={e=>{ const copy=[...local.meds]; copy[idx]={...m, time:e.target.value}; setLocal({...local, meds:copy}); }}/>
-                      <label className="col-span-3 justify-self-end text-sm inline-flex items-center gap-2">
-                        <input type="checkbox" checked={m.enabled} onChange={e=>{ const copy=[...local.meds]; copy[idx]={...m, enabled:e.target.checked}; setLocal({...local, meds:copy}); }}/>
-                        <span>Enabled</span>
-                      </label>
-                      <button className="col-span-2 text-sm px-3 py-1 rounded bg-slate-100" onClick={()=>{ const mins = local.settings.snoozeMins || 10; setTimeout(()=>showBrowserNotification({title:`💊 ${m.name} (snoozed)`, body:`Reminder after ${mins} min`, tag:'snooze', data:{url:location.href+'#meds'}}), mins*60000); notify(`Snoozed ${mins} min`); }}>Snooze</button>
-                    </div>
-                  ))}
-                </div>
-                <button className="mt-3 px-3 py-2 rounded bg-slate-100 text-sm" onClick={()=>setLocal({...local, meds:[...local.meds, { id:'med'+Date.now(), name:'New medication', time:'09:00', enabled:true }]})}>Add medication reminder</button>
-              </Card>
-
-              <Card className="p-5">
-                <div className="font-bold mb-3">Dialysis</div>
-                <div className="grid sm:grid-cols-2 gap-3 items-center">
-                  <label className="text-sm">Time
-                    <input type="time" value={local.dialysis.time} className="mt-1 w-full input"
-                           onChange={(e)=>setLocal({...local, dialysis: {...local.dialysis, time: e.target.value}})} />
-                  </label>
-                  <label className="text-sm inline-flex items-center gap-2 mt-6">
-                    <input type="checkbox" checked={local.dialysis.enabled} onChange={(e)=>setLocal({...local, dialysis:{...local.dialysis, enabled: e.target.checked}})}/>
-                    <span>Enabled</span>
-                  </label>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {weekdays.map((d,i)=> (
-                    <button type="button" key={d} onClick={()=>toggleDay(i)}
-                      className={`px-3 py-1 rounded-full text-sm border ${local.dialysis.days.includes(i) ? 'bg-accent-600 text-white border-accent-600' : 'bg-white text-slate-700 border-slate-200'}`}>
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </Card>
-
-              <Card className="p-5">
-                <div className="font-bold mb-3">Hydration</div>
-                <div className="grid sm:grid-cols-3 gap-3 items-center">
-                  <label className="text-sm">Every (mins)
-                    <input type="number" min="15" value={local.hydration.intervalMins} className="mt-1 w-full input"
-                           onChange={(e)=>setLocal({...local, hydration: {...local.hydration, intervalMins: parseInt(e.target.value||'0',10)}})} />
-                  </label>
-                  <label className="text-sm">Active from
-                    <input type="time" value={local.hydration.activeStart} className="mt-1 w-full input"
-                           onChange={(e)=>setLocal({...local, hydration: {...local.hydration, activeStart: e.target.value}})} />
-                  </label>
-                  <label className="text-sm">to
-                    <input type="time" value={local.hydration.activeEnd} className="mt-1 w-full input"
-                           onChange={(e)=>setLocal({...local, hydration: {...local.hydration, activeEnd: e.target.value}})} />
-                  </label>
-                </div>
-                <div className="mt-3">
-                  <label className="text-sm inline-flex items-center gap-2">
-                    <input type="checkbox" checked={local.hydration.enabled} onChange={(e)=>setLocal({...local, hydration: {...local.hydration, enabled: e.target.checked}})} />
-                    <span>Enabled</span>
-                  </label>
-                </div>
-              </Card>
-
-              {/* Upcoming preview */}
-              <Card className="p-5">
-                <div className="font-bold mb-2">Upcoming</div>
-                {nexts.length===0 ? <div className="text-sm text-slate-500">No events scheduled.</div> :
-                  <ul className="text-sm space-y-1">
-                    {nexts.sort((a,b)=>a.time-b.time).slice(0,5).map((n,i)=>(
-                      <li key={i} className="flex items-center justify-between">
-                        <span>{n.label}</span>
-                        <span className="text-slate-600">{n.time.toLocaleString()}</span>
-                      </li>
-                    ))}
-                  </ul>
-                }
-              </Card>
-
-              <div className="flex gap-3">
-                <button onClick={saveAll} className="px-4 py-2 rounded-lg bg-accent-600 text-white font-semibold">Save & Schedule</button>
-                <button onClick={()=>saveReminders(defaultReminders)} className="px-4 py-2 rounded-lg bg-slate-100">Reset defaults</button>
-              </div>
-            </Section>
-          </Shell>
-        );
-      };
-
-      // ---------- Wellness ----------
-      const Wellness = () => {
-        const content = [
-          { id:'w1', title:'Box Breathing (4-4-4-4)', mins:2, type:'Breathing' },
-          { id:'w2', title:'Guided Body Scan', mins:5, type:'Mindfulness' },
-          { id:'w3', title:'Sleep Story: Calm River', mins:10, type:'Sleep' },
-          { id:'w4', title:'Gratitude Journal', mins:3, type:'Mindset' },
-          { id:'w5', title:'Mini Stretch Routine', mins:4, type:'Movement' },
-        ];
-        const [done, setDone] = useState(() => new Set(load('rene.wellness.done', [])));
-        const toggleDone = (id) => {
-          const n = new Set(done);
-          if (n.has(id)) n.delete(id); else n.add(id);
-          setDone(n); save('rene.wellness.done', Array.from(n));
-          notify(n.has(id)?'Session completed 🎉':'Marked incomplete');
-        };
-
-        return (
-          <Shell>
-            <Notification notice={notice} />
-            <div className="rene-gradient floating-header">
-              <Section className="py-5 flex items-center gap-3 text-white">
-                <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
-                <ReneBrand size="sm" />
-                <span className="ml-auto text-lg font-bold">Wellness</span>
-              </Section>
-            </div>
-            <Section className="py-6 space-y-4 pb-28">
-              <Card className="p-5">
-                <div className="font-semibold mb-2">Today’s suggestions</div>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {content.map(c=>(
-                    <div key={c.id} className="border rounded-xl p-3 flex items-center justify-between">
+            <div className="space-y-3">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><span>🎯</span> All Missions</h3>
+              {todayGoals.map(goal => (
+                <Card key={goal.id} className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{goal.icon}</span>
                       <div>
-                        <div className="font-bold">{c.title}</div>
-                        <div className="text-xs text-slate-500">{c.type} • {c.mins} min</div>
-                      </div>
-                      <button className={`px-3 py-1 rounded ${done.has(c.id)?'bg-emerald-600 text-white':'bg-slate-100'}`} onClick={()=>toggleDone(c.id)}>
-                        {done.has(c.id)?'✓ Done':'Start'}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </Section>
-          </Shell>
-        );
-      };
-
-      // ---------- Symptoms ----------
-      const Symptoms = () => {
-        const [entry, setEntry] = useState({ date: new Date().toISOString(), nausea:0, fatigue:0, cramps:0, itch:0, bp:'', notes:'' });
-
-        const saveEntry = () => {
-          const log = { ...entry, id: Date.now() };
-          const next = [log, ...symptomLogs].slice(0, 50);
-          saveSymptoms(next);
-          notify('Symptoms saved');
-        };
-
-        return (
-          <Shell>
-            <Notification notice={notice} />
-            <div className="rene-gradient floating-header">
-              <Section className="py-5 flex items-center gap-3 text-white">
-                <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
-                <ReneBrand size="sm" />
-                <span className="ml-auto text-lg font-bold">Symptom Tracker</span>
-              </Section>
-            </div>
-            <Section className="py-6 space-y-4 pb-28">
-              <Card className="p-5 space-y-4">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {['nausea','fatigue','cramps','itch'].map(k=>(
-                    <label key={k} className="block text-sm">
-                      {k[0].toUpperCase()+k.slice(1)} (0–10)
-                      <input type="range" min="0" max="10" value={entry[k]} onChange={e=>setEntry({...entry, [k]:parseInt(e.target.value,10)})} className="w-full"/>
-                    </label>
-                  ))}
-                  <label className="block text-sm">
-                    Blood pressure (mmHg)
-                    <input className="input mt-1" placeholder="e.g., 120/80" value={entry.bp} onChange={e=>setEntry({...entry, bp:e.target.value})}/>
-                  </label>
-                </div>
-                <label className="block text-sm">Notes<textarea className="input mt-1 w-full" rows="3" value={entry.notes} onChange={e=>setEntry({...entry, notes:e.target.value})}></textarea></label>
-                <button className="px-4 py-2 rounded bg-accent-600 text-white" onClick={saveEntry}>Save</button>
-              </Card>
-
-              <Card className="p-5">
-                <div className="font-bold mb-3">Recent entries</div>
-                {symptomLogs.length===0 ? <div className="text-sm text-slate-500">No entries yet.</div> :
-                  <div className="space-y-2">
-                    {symptomLogs.slice(0,10).map(log=>(
-                      <div key={log.id} className="border rounded-xl p-3 text-sm">
-                        <div className="font-semibold">{new Date(log.date).toLocaleString()}</div>
-                        <div className="text-slate-600">Nausea {log.nausea}/10 • Fatigue {log.fatigue}/10 • Cramps {log.cramps}/10 • Itch {log.itch}/10 • BP {log.bp||'—'}</div>
-                        {log.notes && <div className="text-slate-600 mt-1">📝 {log.notes}</div>}
-                      </div>
-                    ))}
-                  </div>
-                }
-              </Card>
-            </Section>
-          </Shell>
-        );
-      };
-
-      // ---------- Medications ----------
-      const Meds = () => {
-        const [newMed, setNewMed] = useState({ name:'', dose:'', notes:'', times:['08:00'], refillDate:'' });
-
-        const addMed = () => {
-          const med = { ...newMed, id:'rx'+Date.now() };
-          const next = [med, ...medsList];
-          saveMeds(next);
-          notify('Medication added');
-          setNewMed({ name:'', dose:'', notes:'', times:['08:00'], refillDate:'' });
-        };
-        const removeMed = (id) => {
-          const next = medsList.filter(m => m.id!==id);
-          saveMeds(next);
-        };
-
-        const todayStr = new Date().toDateString();
-
-        return (
-          <Shell>
-            <Notification notice={notice} />
-            <div className="rene-gradient floating-header">
-              <Section className="py-5 flex items-center gap-3 text-white">
-                <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
-                <ReneBrand size="sm" />
-                <span className="ml-auto text-lg font-bold">Medication Overview</span>
-              </Section>
-            </div>
-            <Section className="py-6 space-y-6 pb-28">
-              {/* Today doses */}
-              <Card className="p-5">
-                <div className="font-bold mb-3">Today’s doses</div>
-                <div className="space-y-2">
-                  {medsList.flatMap(m => m.times.map(t => ({ med:m, time:t }))).sort((a,b)=>a.time.localeCompare(b.time)).map(({med,time},i)=> {
-                    const key = med.id + '|' + time;
-                    const taken = takenToday[key];
-                    return (
-                      <div key={i} className="border rounded-xl p-3 flex items-center justify-between">
-                        <div>
-                          <div className="font-semibold">{med.name} — {med.dose}</div>
-                          <div className="text-xs text-slate-500">{time} • {med.notes || '—'}</div>
-                        </div>
-                        <button className={`px-3 py-1 rounded ${taken?'bg-emerald-600 text-white':'bg-slate-100'}`} disabled={taken} onClick={()=>markDoseTaken(med.id, time)}>{taken?'✓ Taken':'Mark taken'}</button>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="text-[11px] text-slate-500 mt-2">Adherence saved as: “rene.meds.taken.{todayStr}”</div>
-              </Card>
-
-              {/* Meds list */}
-              <Card className="p-5">
-                <div className="font-bold mb-3">Your medications</div>
-                <div className="space-y-3">
-                  {medsList.map(m=>(
-                    <div key={m.id} className="border rounded-xl p-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="font-semibold">{m.name} — {m.dose}</div>
-                          <div className="text-xs text-slate-500">{m.notes || '—'}</div>
-                          <div className="text-xs text-slate-600 mt-1">Times: {m.times.join(', ')}</div>
-                          <div className="text-xs text-slate-600 mt-1">Refill by: {m.refillDate || '—'}</div>
-                        </div>
-                        <button className="px-2 py-1 rounded bg-rose-100 text-rose-700 text-sm" onClick={()=>removeMed(m.id)}>Remove</button>
+                        <div className={`text-base font-bold ${goal.completed ? 'line-through text-slate-500' : 'text-slate-800'}`}>{goal.title}</div>
+                        <p className="text-xs text-slate-600 mt-0.5">{goal.completed ? 'Completed today! Great job!' : `Complete to earn ${goal.xp} XP`}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Add med */}
-              <Card className="p-5">
-                <div className="font-bold mb-2">Add a medication</div>
-                <div className="grid sm:grid-cols-3 gap-3">
-                  <input className="input" placeholder="Name" value={newMed.name} onChange={e=>setNewMed({...newMed, name:e.target.value})}/>
-                  <input className="input" placeholder="Dose" value={newMed.dose} onChange={e=>setNewMed({...newMed, dose:e.target.value})}/>
-                  <input className="input" placeholder="Notes (e.g., with meals)" value={newMed.notes} onChange={e=>setNewMed({...newMed, notes:e.target.value})}/>
-                  <input className="input" placeholder="Times (HH:MM, comma-separated)" value={newMed.times.join(', ')} onChange={e=>setNewMed({...newMed, times:e.target.value.split(',').map(s=>s.trim()).filter(Boolean)})}/>
-                  <input className="input" type="date" value={newMed.refillDate} onChange={e=>setNewMed({...newMed, refillDate:e.target.value})}/>
-                </div>
-                <div className="mt-3">
-                  <button disabled={!newMed.name.trim()} className="px-4 py-2 rounded bg-accent-600 text-white disabled:opacity-60" onClick={addMed}>Add</button>
-                </div>
-              </Card>
-
-              <Card className="p-5">
-                <div className="text-sm text-slate-600">Tip: The <b>Reminders</b> page controls when notifications fire. Make sure medication times there match this overview for best results.</div>
-              </Card>
-            </Section>
-          </Shell>
-        );
-      };
-
-      // ---------- Dialysis ----------
-      const Dialysis = () => {
-        const [notes, setNotes] = useState('');
-        const elapsedMins = Math.floor(dialysisTimer.elapsed / 60);
-        const progress = Math.min(100, Math.floor((elapsedMins / dialysisTimer.durationMins) * 100)) || 0;
-
-        const saveNote = () => {
-          const log = { id: Date.now(), date: new Date().toISOString(), note: notes };
-          const next = [log, ...dialysisLogs];
-          saveDialysisLogs(next);
-          setNotes('');
-          notify('Note saved');
-        };
-
-        return (
-          <Shell>
-            <Notification notice={notice} />
-            <div className="rene-gradient floating-header">
-              <Section className="py-5 flex items-center gap-3 text-white">
-                <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
-                <ReneBrand size="sm" />
-                <span className="ml-auto text-lg font-bold">Dialysis</span>
-              </Section>
+                    <button onClick={() => completeGoal(goal.id)} disabled={goal.completed} className={`px-5 py-2 rounded-lg font-bold text-sm ${goal.completed ? 'bg-emerald-600 text-white' : 'bg-accent-600 hover:bg-accent-500 text-white'}`}>{goal.completed ? '✓ Done' : 'Complete'}</button>
+                  </div>
+                </Card>
+              ))}
             </div>
-            <Section className="py-6 space-y-5 pb-28">
-              <Card className="p-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-bold">Session tools</div>
-                    <div className="text-xs text-slate-500">Timer, check-ins, notes & entertainment</div>
-                  </div>
-                  {!dialysisActive ? (
-                    <button className="px-4 py-2 rounded bg-accent-600 text-white" onClick={startDialysis}>Start session</button>
-                  ) : (
-                    <button className="px-4 py-2 rounded bg-rose-600 text-white" onClick={endDialysis}>End session</button>
-                  )}
-                </div>
-                <div className="mt-3">
-                  <div className="text-xs text-slate-600">Duration target (mins)</div>
-                  <input type="number" min="60" max="600" className="input mt-1 w-40" value={dialysisTimer.durationMins} onChange={e=>setDialysisTimer(t=>({...t, durationMins:parseInt(e.target.value||'240',10)}))}/>
-                </div>
-                {dialysisActive && (
-                  <div className="mt-4">
-                    <div className="text-sm font-semibold mb-1">Elapsed: {elapsedMins} min / {dialysisTimer.durationMins} min</div>
-                    <div className="progress-track"><div className="progress-fill" style={{width:`${progress}%`}}/></div>
-                  </div>
-                )}
-              </Card>
+          </Section>
 
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Card className="p-5 cursor-pointer" onClick={()=>setCurrentPage('symptoms')}>
-                  <div className="text-2xl mb-2">🙂</div>
-                  <div className="font-bold">Mood & Symptoms</div>
-                  <div className="text-sm text-slate-600">Quick PROMs during session</div>
-                </Card>
-                <Card className="p-5 cursor-pointer" onClick={()=>notify('Opening mini games') }>
-                  <div className="text-2xl mb-2">🎮</div>
-                  <div className="font-bold">Mini-games</div>
-                  <div className="text-sm text-slate-600">Light games to pass time</div>
-                </Card>
-                <Card className="p-5 cursor-pointer" onClick={()=>notify('Opening entertainment hub') }>
-                  <div className="text-2xl mb-2">🎧</div>
-                  <div className="font-bold">Entertainment</div>
-                  <div className="text-sm text-slate-600">Music, podcasts, videos</div>
-                </Card>
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-screen-lg bottom-nav">
+            <div className="mx-auto max-w-[1000px]">
+              <div className="grid grid-cols-4 gap-2 px-4 py-3">
+                <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
+                <button className="flex flex-col items-center rounded-lg py-1 text-accent-600 bg-accent-50 font-semibold"><div className="text-xl">🎯</div><span className="text-[11px]">Goals</span></button>
+                <button onClick={() => setCurrentPage('chat')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👥</div><span className="text-[11px] font-medium">Heroes</span></button>
+                <button onClick={() => setCurrentPage('profile')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👤</div><span className="text-[11px] font-medium">Profile</span></button>
               </div>
+            </div>
+          </div>
+        </Shell>
+      );
 
-              <Card className="p-5">
-                <div className="font-semibold mb-2">Notes</div>
-                <textarea className="input w-full" rows="3" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Symptoms, events, anything notable…"></textarea>
-                <button className="mt-2 px-3 py-2 rounded bg-slate-100" onClick={saveNote}>Save note</button>
-              </Card>
-
-              <Card className="p-5">
-                <div className="font-bold mb-2">Recent session notes</div>
-                {dialysisLogs.length===0 ? <div className="text-sm text-slate-500">No notes yet.</div> :
-                  <ul className="text-sm space-y-2">
-                    {dialysisLogs.slice(0,10).map(l=>(
-                      <li key={l.id} className="border rounded-xl p-3">
-                        <div className="font-semibold">{new Date(l.date).toLocaleString()}</div>
-                        <div className="text-slate-600">{l.note||'—'}</div>
-                      </li>
-                    ))}
-                  </ul>
-                }
-              </Card>
+      const Chat = () => (
+        <Shell>
+          <Notification notice={notice} />
+          <div className="rene-gradient floating-header">
+            <Section className="py-5 flex items-center gap-3 text-white">
+              <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
+              <ReneBrand size="sm" />
+              <span className="ml-auto text-lg font-bold">Hero Alliance</span>
             </Section>
-          </Shell>
-        );
-      };
+          </div>
 
-      // ---------- Profile ----------
+        <Section className="py-4 space-y-4 pb-28">
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-slate-700 flex items-center gap-2"><span className="text-lg">🌟</span> Heroes Online</span>
+                <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-500"></span><span className="text-[11px] font-bold text-emerald-600">4 active</span></div>
+              </div>
+            </Card>
+
+            {/* Challenges */}
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-slate-800 font-bold">Challenges</h3>
+                <button className="text-sm px-3 py-1 rounded-lg bg-accent-600 text-white" onClick={() => notify('Challenge created')}>New</button>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="border rounded-lg p-3 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold">Hydration target 3-day streak</div>
+                    <div className="text-xs text-slate-500">You vs. Sofia</div>
+                  </div>
+                  <button className="text-sm px-3 py-1 rounded bg-slate-100" onClick={() => notify('Challenge sent!')}>Challenge</button>
+                </div>
+                <div className="border rounded-lg p-3 flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold">Intensity minutes 100/week</div>
+                    <div className="text-xs text-slate-500">Open challenge</div>
+                  </div>
+                  <button className="text-sm px-3 py-1 rounded bg-slate-100" onClick={() => notify('Joined challenge')}>Join</button>
+                </div>
+              </div>
+            </Card>
+
+            {/* Leaderboard */}
+            <Card className="p-4">
+              <h3 className="text-slate-800 font-bold mb-3">Leaderboard (This week)</h3>
+              <div className="divide-y">
+                {[{u:'Leandro',xp:420},{u:'Sofia',xp:380},{u:'Marcus',xp:310},{u:'Emma',xp:280}].map((r,i)=> (
+                  <div key={i} className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 text-center font-bold">{i+1}</span>
+                      <span className="font-medium">{r.u}</span>
+                    </div>
+                    <span className="text-sm font-semibold text-slate-700">{r.xp} XP</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Chat feed */}
+            <div className="space-y-3 min-h-[30vh]">
+              {chatMessages.map(m => (
+                <Card key={m.id} className="p-4">
+                  <div className="flex gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-800 to-rose-600 text-white grid place-items-center text-xl">{m.avatar}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1"><span className="font-bold text-slate-800">{m.user}</span><span className="text-[11px] text-slate-500 font-medium">{m.time}</span></div>
+                      <p className="text-slate-700 mb-3 leading-relaxed">{m.message}</p>
+                      <div className="flex items-center justify-between text-sm">
+                        <button onClick={() => setChatMessages(prev => prev.map(x => x.id === m.id ? { ...x, likes: x.likes + 1 } : x))} className="inline-flex items-center gap-2 text-slate-500 hover:text-rose-600"><span>❤️</span><span className="font-medium">{m.likes}</span></button>
+                        <button className="text-slate-500 hover:text-slate-700 font-medium">Reply</button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </Section>
+
+          <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-screen-lg px-4">
+            <Card className="p-3">
+              <div className="flex gap-3">
+                <input type="text" value={newMessage} onChange={(e)=>setNewMessage(e.target.value)} onKeyDown={(e)=>e.key==='Enter' && sendMessage()} placeholder="Send encouragement to fellow heroes..." className="flex-1 px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-accent-500" />
+                <button onClick={sendMessage} disabled={!newMessage.trim()} className="px-5 py-2 rounded-lg font-bold bg-accent-600 text-white disabled:opacity-60">Send</button>
+              </div>
+            </Card>
+          </div>
+
+          <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-screen-lg bottom-nav">
+            <div className="mx-auto max-w-[1000px]">
+              <div className="grid grid-cols-4 gap-2 px-4 py-3">
+                <button onClick={() => setCurrentPage('home')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🏠</div><span className="text-[11px] font-medium">Home</span></button>
+                <button onClick={() => setCurrentPage('goals')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">🎯</div><span className="text-[11px] font-medium">Goals</span></button>
+                <button className="flex flex-col items-center rounded-lg py-1 text-accent-600 bg-accent-50 font-semibold"><div className="text-xl">👥</div><span className="text-[11px]">Heroes</span></button>
+                <button onClick={() => setCurrentPage('profile')} className="flex flex-col items-center rounded-lg py-1 text-slate-600 hover:bg-slate-50"><div className="text-xl">👤</div><span className="text-[11px] font-medium">Profile</span></button>
+              </div>
+            </div>
+          </div>
+        </Shell>
+      );
+
       const Profile = () => (
         <Shell>
           <Notification notice={notice} />
@@ -1323,6 +780,12 @@
                 <Stat label="Achievements" value={2} />
               </div>
             </Card>
+
+            <Card className="p-5">
+              <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2"><span>💬</span> Need Help?</h3>
+              <p className="text-slate-600 text-sm mb-4">Our support team is here 24/7 to help with any questions about RENÉ or your kidney health journey.</p>
+              <button onClick={() => notify('Support is here.')} className="w-full px-5 py-3 rounded-lg font-bold bg-accent-600 hover:bg-accent-500 text-white">Contact Support Team</button>
+            </Card>
           </Section>
 
           <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-screen-lg bottom-nav">
@@ -1338,7 +801,258 @@
         </Shell>
       );
 
-      // ---------- Router ----------
+      // ---------------- Reminders Page ----------------
+      const Reminders = () => {
+        const [local, setLocal] = useState(reminders);
+        const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const perm = getPermission();
+
+        const toggleDay = (i) => {
+          const set = new Set(local.dialysis.days);
+          if (set.has(i)) set.delete(i); else set.add(i);
+          setLocal({...local, dialysis: {...local.dialysis, days: Array.from(set).sort()}});
+        };
+
+        const saveAll = () => {
+          setReminders(local);
+          notify('Reminders saved & scheduled ✅');
+        };
+
+        const sendTest = () => {
+          showBrowserNotification({
+            title: '🔔 Test notification',
+            body: 'If you see this, notifications are working!',
+            tag: 'test',
+            data: { url: location.href }
+          }).then(ok => { if (!ok) notify('Test shown in-app (browser blocked push).'); });
+        };
+
+        const demoTriggers = () => {
+          setTimeout(()=> showBrowserNotification({ title:'💊 Medication', body:'Time to take your medication.', tag:'demo-med', data:{url:location.origin+location.pathname+'#meds'} }), 1500);
+          setTimeout(()=> showBrowserNotification({ title:'🩺 Dialysis', body:'Session starts soon. Do a quick check-in?', tag:'demo-dialysis', data:{url:location.origin+location.pathname+'#dialysis'} }), 3000);
+          setTimeout(()=> showBrowserNotification({ title:'💧 Hydration', body:'Quick sip to stay on target.', tag:'demo-hydration', data:{url:location.href} }), 4500);
+          notify('Demo notifications queued…');
+        };
+
+        return (
+          <Shell>
+            <Notification notice={notice} />
+            <div className="rene-gradient floating-header">
+              <Section className="py-5 flex items-center gap-3 text-white">
+                <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
+                <ReneBrand size="sm" />
+                <span className="ml-auto text-lg font-bold">Reminders</span>
+              </Section>
+            </div>
+
+            <Section className="py-6 space-y-6 pb-28">
+              <Card className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-bold">Notifications</div>
+                    <div className="text-xs text-slate-500">Permission: <span className="font-semibold">{perm}</span></div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={requestPermission} className="px-3 py-2 rounded-lg text-sm bg-slate-100">Enable</button>
+                    <label className="inline-flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={local.enabled} onChange={(e)=>setLocal({...local, enabled: e.target.checked})}/>
+                      <span>Reminders on</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button onClick={sendTest} className="px-3 py-2 rounded-lg text-sm bg-accent-600 text-white">Send test</button>
+                  <button onClick={demoTriggers} className="px-3 py-2 rounded-lg text-sm bg-slate-100">Demo triggers</button>
+                </div>
+              </Card>
+
+              <Card className="p-5">
+                <div className="font-bold mb-3">Medication</div>
+                <div className="space-y-3">
+                  {local.meds.map((m, idx) => (
+                    <div key={m.id} className="grid grid-cols-12 items-center gap-3">
+                      <label className="col-span-5 text-sm">
+                        <input type="text" value={m.name}
+                               onChange={(e)=> { const copy=[...local.meds]; copy[idx]={...m, name:e.target.value}; setLocal({...local, meds: copy}); }}
+                               className="w-full px-3 py-2 rounded-lg border border-slate-200"/>
+                      </label>
+                      <input className="col-span-4 px-3 py-2 rounded-lg border border-slate-200" type="time" value={m.time}
+                             onChange={(e)=> { const copy=[...local.meds]; copy[idx]={...m, time:e.target.value}; setLocal({...local, meds:copy}); }}/>
+                      <label className="col-span-3 justify-self-end text-sm inline-flex items-center gap-2">
+                        <input type="checkbox" checked={m.enabled} onChange={(e)=>{ const copy=[...local.meds]; copy[idx]={...m, enabled:e.target.checked}; setLocal({...local, meds: copy}); }}/>
+                        <span>Enabled</span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              <Card className="p-5">
+                <div className="font-bold mb-3">Dialysis</div>
+                <div className="grid sm:grid-cols-2 gap-3 items-center">
+                  <label className="text-sm">Time
+                    <input type="time" value={local.dialysis.time} className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200"
+                           onChange={(e)=>setLocal({...local, dialysis: {...local.dialysis, time: e.target.value}})} />
+                  </label>
+                  <label className="text-sm inline-flex items-center gap-2">
+                    <input type="checkbox" checked={local.dialysis.enabled} onChange={(e)=>setLocal({...local, dialysis:{...local.dialysis, enabled: e.target.checked}})}/>
+                    <span>Enabled</span>
+                  </label>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d,i)=> (
+                    <button type="button" key={d}
+                            onClick={()=>{ const set=new Set(local.dialysis.days); set.has(i)?set.delete(i):set.add(i); setLocal({...local, dialysis:{...local.dialysis, days:[...set].sort()}}); }}
+                            className={`px-3 py-1 rounded-full text-sm border ${local.dialysis.days.includes(i) ? 'bg-accent-600 text-white border-accent-600' : 'bg-white text-slate-700 border-slate-200'}`}>
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </Card>
+
+              <Card className="p-5">
+                <div className="font-bold mb-3">Hydration</div>
+                <div className="grid sm:grid-cols-3 gap-3 items-center">
+                  <label className="text-sm">Every (mins)
+                    <input type="number" min="15" value={local.hydration.intervalMins} className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200"
+                           onChange={(e)=>setLocal({...local, hydration: {...local.hydration, intervalMins: parseInt(e.target.value||'0',10)}})} />
+                  </label>
+                  <label className="text-sm">Active from
+                    <input type="time" value={local.hydration.activeStart} className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200"
+                           onChange={(e)=>setLocal({...local, hydration: {...local.hydration, activeStart: e.target.value}})} />
+                  </label>
+                  <label className="text-sm">to
+                    <input type="time" value={local.hydration.activeEnd} className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200"
+                           onChange={(e)=>setLocal({...local, hydration: {...local.hydration, activeEnd: e.target.value}})} />
+                  </label>
+                </div>
+                <div className="mt-3">
+                  <label className="text-sm inline-flex items-center gap-2">
+                    <input type="checkbox" checked={local.hydration.enabled} onChange={(e)=>setLocal({...local, hydration: {...local.hydration, enabled: e.target.checked}})} />
+                    <span>Enabled</span>
+                  </label>
+                </div>
+              </Card>
+
+              <div className="flex gap-3">
+                <button onClick={saveAll} className="px-4 py-2 rounded-lg bg-accent-600 text-white font-semibold">Save & Schedule</button>
+                <button onClick={()=>setReminders({enabled:false, ...defaultReminders})} className="px-4 py-2 rounded-lg bg-slate-100">Reset defaults</button>
+              </div>
+            </Section>
+          </Shell>
+        );
+      };
+
+      const Wellness = () => (
+        <Shell>
+          <Notification notice={notice} />
+          <div className="rene-gradient floating-header">
+            <Section className="py-5 flex items-center gap-3 text-white">
+              <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
+              <ReneBrand size="sm" />
+              <span className="ml-auto text-lg font-bold">Wellness</span>
+            </Section>
+          </div>
+          <Section className="py-6 space-y-4 pb-28">
+            <Card className="p-5"><div className="font-semibold mb-2">Mindfulness</div><button className="px-4 py-2 rounded bg-accent-600 text-white" onClick={()=>notify('Breathing started')}>Start breathing</button></Card>
+            <Card className="p-5"><div className="font-semibold mb-2">Guided audio</div><button className="px-4 py-2 rounded bg-slate-100" onClick={()=>notify('Playing 5-min relax')}>Play 5-min relax</button></Card>
+          </Section>
+        </Shell>
+      );
+
+      const Symptoms = () => (
+        <Shell>
+          <Notification notice={notice} />
+          <div className="rene-gradient floating-header">
+            <Section className="py-5 flex items-center gap-3 text-white">
+              <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
+              <ReneBrand size="sm" />
+              <span className="ml-auto text-lg font-bold">Symptom Tracker</span>
+            </Section>
+          </div>
+          <Section className="py-6 space-y-4 pb-28">
+            <Card className="p-5 space-y-3">
+              <label className="block text-sm">Nausea (0–10)</label>
+              <input type="range" min="0" max="10" className="w-full"/>
+              <label className="block text-sm">Fatigue (0–10)</label>
+              <input type="range" min="0" max="10" className="w-full"/>
+              <label className="block text-sm">Cramps (0–10)</label>
+              <input type="range" min="0" max="10" className="w-full"/>
+              <button className="px-4 py-2 rounded bg-accent-600 text-white" onClick={()=>notify('Symptoms saved')}>Save</button>
+            </Card>
+          </Section>
+        </Shell>
+      );
+
+      const Meds = () => (
+        <Shell>
+          <Notification notice={notice} />
+          <div className="rene-gradient floating-header">
+            <Section className="py-5 flex items-center gap-3 text-white">
+              <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
+              <ReneBrand size="sm" />
+              <span className="ml-auto text-lg font-bold">Medication Overview</span>
+            </Section>
+          </div>
+          <Section className="py-6 space-y-4 pb-28">
+            <Card className="p-5">
+              <div className="font-semibold mb-2">Today</div>
+              <ul className="text-sm list-disc pl-5 space-y-1">
+                <li>Sevelamer 800 mg — 08:30</li>
+                <li>Erythropoietin — 18:00</li>
+              </ul>
+              <button className="mt-3 px-4 py-2 rounded bg-slate-100" onClick={()=>notify('Reminders configured')}>Configure reminders</button>
+            </Card>
+          </Section>
+        </Shell>
+      );
+
+      const Dialysis = () => (
+        <Shell>
+          <Notification notice={notice} />
+          <div className="rene-gradient floating-header">
+            <Section className="py-5 flex items-center gap-3 text-white">
+              <button onClick={() => setCurrentPage('home')} className="text-2xl">←</button>
+              <ReneBrand size="sm" />
+              <span className="ml-auto text-lg font-bold">Dialysis</span>
+            </Section>
+          </div>
+          <Section className="py-6 space-y-5 pb-28">
+            <Card className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-bold">Session tools</div>
+                  <div className="text-xs text-slate-500">Check-ins, games & entertainment</div>
+                </div>
+                {!dialysisActive ? (
+                  <button className="px-4 py-2 rounded bg-accent-600 text-white" onClick={startDialysis}>Start session</button>
+                ) : (
+                  <button className="px-4 py-2 rounded bg-rose-600 text-white" onClick={stopDialysis}>End session</button>
+                )}
+              </div>
+            </Card>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Card className="p-5 cursor-pointer" onClick={()=>setCurrentPage('symptoms')}>
+                <div className="text-2xl mb-2">🙂</div>
+                <div className="font-bold">Mood & Symptoms</div>
+                <div className="text-sm text-slate-600">Quick PROMs during session</div>
+              </Card>
+              <Card className="p-5 cursor-pointer" onClick={()=>notify('Opening mini games') }>
+                <div className="text-2xl mb-2">🎮</div>
+                <div className="font-bold">Mini-games</div>
+                <div className="text-sm text-slate-600">Light games to pass time</div>
+              </Card>
+              <Card className="p-5 cursor-pointer" onClick={()=>notify('Opening entertainment hub') }>
+                <div className="text-2xl mb-2">🎧</div>
+                <div className="font-bold">Entertainment</div>
+                <div className="text-sm text-slate-600">Music, podcasts, videos</div>
+              </Card>
+            </div>
+          </Section>
+        </Shell>
+      );
+
+      // Router
       const Page = () => {
         switch (currentPage) {
           case 'home': return <Home/>;
@@ -1353,10 +1067,6 @@
           default: return <Home/>;
         }
       };
-
-      React.useEffect(()=>{ // save takenToday daily under date key
-        save('rene.meds.taken.'+new Date().toDateString(), takenToday);
-      }, [takenToday]);
 
       return <Page/>;
     };
